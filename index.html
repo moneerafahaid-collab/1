@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>من الكود إلى المشروع — Git وGitHub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f3efe6;
+    --ink: #1c1916;
+    --muted: #4e4942;
+    --line: #ddd4c6;
+    --card: #fffcf7;
+    --pine: #0d6a56;
+    --pine-soft: #e5f3ef;
+    --copper: #7a3e18;
+    --copper-soft: #f8efe6;
+    --code: #221f1b;
+    --code-text: #f4efe6;
+    --danger: #7d2e2e;
+    --danger-soft: #f8ecec;
+    --top: 58px;
+    --bottom: 62px;
+  }
+  * { box-sizing: border-box; }
+  html { font-size: clamp(16px, 1.25vw, 20px); }
+  body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+    line-height: 1.65;
+  }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  button:focus-visible, a:focus-visible { outline: 2px solid var(--pine); outline-offset: 2px; }
+  a { color: var(--pine); }
+  [hidden] { display: none !important; }
+  h1, h2, h3, p { margin: 0; }
+  h1 { font-size: clamp(1.7rem, 3vw, 2.35rem); line-height: 1.35; font-weight: 700; }
+  h2 { font-size: 1.35rem; line-height: 1.4; font-weight: 700; }
+  h3 { font-size: 1.05rem; line-height: 1.45; font-weight: 600; }
+
+  .top, .bottom {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 18px;
+    background: var(--card);
+    border-color: var(--line);
+    border-style: solid;
+    z-index: 2;
+  }
+  .top { height: var(--top); border-width: 0 0 1px; justify-content: space-between; }
+  .bottom { height: var(--bottom); border-width: 1px 0 0; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .mark {
+    font-family: "IBM Plex Mono", Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    border: 1px solid var(--ink);
+    padding: 2px 6px;
+  }
+  .top-actions, .bottom { display: flex; align-items: center; gap: 10px; }
+  .section-label { color: var(--muted); font-size: 0.85rem; }
+  .counter { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 4.5rem; text-align: center; }
+  .ghost, .primary, .texty {
+    border: 1px solid var(--line);
+    background: transparent;
+    padding: 7px 12px;
+  }
+  .primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .texty { border: 0; background: transparent; padding: 8px 4px; text-align: right; width: 100%; }
+  button:disabled { opacity: 0.35; cursor: default; }
+  .progress { flex: 1; height: 4px; background: var(--line); position: relative; }
+  #bar { position: absolute; top: 0; right: 0; bottom: 0; width: 0; background: var(--pine); }
+  .hint { color: var(--muted); font-size: 0.72rem; white-space: nowrap; }
+
+  .stage-wrap { flex: 1; overflow: auto; }
+  .slide { max-width: 1180px; margin: 0 auto; padding: 28px 32px 46px; }
+  .kicker { color: var(--pine); font-weight: 600; font-size: 0.82rem; margin-bottom: 8px; }
+  .lead { margin-top: 10px; color: var(--muted); font-size: 1.08rem; max-width: 46rem; }
+  .idea {
+    margin-top: 22px;
+    max-width: 38rem;
+    padding: 14px 16px;
+    background: var(--pine-soft);
+    border-inline-start: 3px solid var(--pine);
+    font-weight: 600;
+  }
+  .cover { min-height: calc(100vh - var(--top) - var(--bottom) - 8px); display: flex; flex-direction: column; justify-content: space-between; }
+  .cover h1 { font-size: clamp(2.3rem, 5vw, 3.6rem); max-width: 9em; line-height: 1.25; }
+  .meta-row { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); margin-top: 28px; }
+  .meta-row div { padding: 14px 14px 0 0; border-inline-start: 1px solid var(--line); }
+  .meta-row div:first-child { border-inline-start: 0; padding-inline-start: 0; }
+  .meta-row strong { display: block; font-size: 1.05rem; }
+  .meta-row span { color: var(--muted); font-size: 0.88rem; }
+
+  .trainer-flag {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 10px 32px 0;
+    color: var(--copper);
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+  .callout {
+    margin-top: 16px;
+    padding: 12px 14px;
+    background: var(--pine-soft);
+    border-inline-start: 3px solid var(--pine);
+  }
+  .ask {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    font-weight: 600;
+  }
+  .ask span { display: inline-block; margin-inline-end: 8px; color: var(--pine); font-size: 0.82rem; }
+  .ex-label { color: var(--copper); font-weight: 700; font-size: 0.82rem; margin-inline-end: 6px; }
+  .example {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: var(--copper-soft);
+    border-inline-start: 3px solid var(--copper);
+  }
+  .example p + p { margin-top: 6px; }
+
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 22px 28px; margin-top: 18px; }
+  .cols.three { grid-template-columns: repeat(3, 1fr); }
+  .point { padding: 11px 0; border-bottom: 1px solid var(--line); }
+  .point p, .step p { color: var(--muted); margin-top: 3px; }
+  .point .ex, .step .ex { color: var(--ink); }
+
+  .steps { list-style: none; padding: 0; margin: 18px 0 0; }
+  .steps li { display: grid; grid-template-columns: 36px 1fr; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .num {
+    width: 28px; height: 28px; display: grid; place-items: center;
+    border: 1px solid var(--ink); font-size: 0.82rem; font-weight: 700;
+  }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+  th, td { text-align: right; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-size: 0.82rem; font-weight: 600; }
+  td:last-child, th:last-child { background: var(--copper-soft); }
+
+  .agenda { margin-top: 8px; }
+  .agenda-row {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 108px 180px 1fr;
+    gap: 12px;
+    padding: 11px 8px;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    text-align: right;
+  }
+  .agenda-row:hover, .pick:hover, .menu-item:hover { background: var(--pine-soft); }
+  .agenda-row strong { font-weight: 600; }
+  .when { color: var(--pine); font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  .explorer { display: grid; grid-template-columns: 300px 1fr; gap: 18px; margin-top: 16px; align-items: start; }
+  .explorer-list { border: 1px solid var(--line); max-height: min(520px, 58vh); overflow: auto; background: var(--card); }
+  .pick {
+    display: flex; flex-direction: column; gap: 2px;
+    width: 100%; text-align: right;
+    padding: 10px 12px;
+    border: 0; border-bottom: 1px solid var(--line);
+    background: transparent;
+  }
+  .pick.on { background: var(--pine-soft); }
+  .pick-title { font-weight: 600; }
+  .pick-role { color: var(--muted); font-size: 0.82rem; }
+  .detail { padding: 4px 4px 0 0; }
+  .detail .lead { margin-top: 6px; }
+
+  pre {
+    margin: 10px 0 0;
+    padding: 12px 14px;
+    background: var(--code);
+    color: var(--code-text);
+    font-family: "IBM Plex Mono", Consolas, monospace;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    direction: ltr;
+    text-align: left;
+    white-space: pre-wrap;
+    overflow: auto;
+  }
+  pre.doc { background: var(--card); color: var(--ink); direction: rtl; text-align: right; border: 1px solid var(--line); }
+  .window-label {
+    margin-top: 12px;
+    font-family: "IBM Plex Mono", Consolas, monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .names { display: grid; gap: 8px; margin-top: 18px; max-width: 28rem; }
+  .names div { padding: 8px 12px; border: 1px solid var(--line); background: var(--card); font-family: "IBM Plex Mono", Consolas, monospace; direction: ltr; text-align: left; }
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
+  .panel { padding: 14px 16px 6px; border: 1px solid var(--line); background: var(--card); }
+  .panel h2 { margin-bottom: 4px; }
+
+  .tree {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    font-family: "IBM Plex Mono", Consolas, monospace;
+    font-size: 0.86rem;
+    direction: ltr;
+    text-align: left;
+    line-height: 1.7;
+  }
+
+  .quiz-top { display: flex; justify-content: space-between; gap: 12px; margin-top: 16px; color: var(--muted); }
+  .dots { display: flex; gap: 5px; flex-wrap: wrap; }
+  .dots i { width: 8px; height: 8px; background: var(--line); display: block; }
+  .dots i.on { background: var(--pine); }
+  .answer { margin-top: 14px; }
+
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .pair .panel h2 { font-size: 1.05rem; }
+  .diff-add { background: var(--pine-soft); }
+  .diff-del { background: var(--danger-soft); }
+  .line { padding: 4px 8px; font-family: "IBM Plex Mono", Consolas, monospace; font-size: 0.84rem; direction: ltr; text-align: left; }
+
+  .phrase { padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .phrase p { margin-top: 4px; }
+
+  .checks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 16px; align-items: start; }
+  .check {
+    display: flex; gap: 8px; align-items: flex-start;
+    width: 100%; text-align: right;
+    padding: 7px 0;
+    border: 0; border-bottom: 1px solid var(--line);
+    background: transparent;
+  }
+  .box { width: 16px; height: 16px; border: 1px solid var(--ink); flex: none; margin-top: 4px; }
+  .check.on .box { background: var(--pine); border-color: var(--pine); }
+  .check.on span { color: var(--muted); text-decoration: line-through; }
+
+  .links { margin-top: 8px; }
+  .links a { display: block; padding: 12px 0; border-bottom: 1px solid var(--line); text-decoration: none; }
+  .links a strong { display: block; color: var(--ink); }
+  .links a span { color: var(--muted); font-size: 0.92rem; }
+
+  .overlay { position: fixed; inset: 0; background: rgba(28, 25, 22, 0.4); z-index: 5; }
+  .drawer {
+    position: absolute; top: 0; bottom: 0; right: 0;
+    width: min(400px, 100%);
+    background: var(--card);
+    border-left: 1px solid var(--line);
+    overflow: auto;
+    padding: 16px 14px 28px;
+  }
+  .menu-sec { margin: 14px 8px 4px; color: var(--pine); font-size: 0.78rem; font-weight: 700; }
+  .menu-item.on { background: var(--pine-soft); }
+  .notes {
+    position: fixed;
+    left: 16px; right: 16px; bottom: calc(var(--bottom) + 10px);
+    background: var(--ink); color: var(--paper);
+    padding: 14px 16px;
+    z-index: 4;
+  }
+  .notes-label { color: #c9c1b4; font-size: 0.75rem; font-weight: 700; margin-bottom: 4px; }
+  .row-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .choice {
+    display: block;
+    width: 100%;
+    text-align: right;
+    margin-top: 8px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    background: var(--card);
+  }
+  .choice.right { background: var(--pine-soft); border-color: var(--pine); }
+  .choice.wrong { background: var(--danger-soft); border-color: var(--danger); }
+  .choice:disabled { opacity: 1; cursor: default; }
+  .turn {
+    display: inline-block;
+    margin-bottom: 8px;
+    padding: 2px 8px;
+    border: 1px solid var(--pine);
+    color: var(--pine);
+    font-weight: 700;
+    font-size: 0.82rem;
+  }
+
+  @media (min-width: 901px) {
+  ol.steps.dense {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 32px;
+  }
+}
+@media (max-width: 900px) {
+    .cols, .cols.three, .split, .pair, .checks, .explorer { grid-template-columns: 1fr; }
+    .meta-row { grid-template-columns: 1fr 1fr; }
+    .meta-row div { border-inline-start: 0; padding: 12px 10px 0 0; border-top: 1px solid var(--line); }
+    .meta-row div:nth-child(-n + 2) { border-top: 0; padding-top: 0; }
+    .agenda-row { grid-template-columns: 1fr; gap: 2px; }
+    .hint { display: none; }
+    .explorer-list { max-height: 210px; }
+    .slide { padding: 20px 16px 32px; }
+    .trainer-flag { padding-inline: 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="mark">Git</span><span>من الكود إلى المشروع</span></div>
+  <div class="top-actions">
+    <span class="section-label" id="section-label"></span>
+    <span class="counter" id="counter" dir="ltr"></span>
+    <button class="ghost" id="menu-btn" data-action="menu" type="button">القائمة</button>
+  </div>
+</header>
+<div class="stage-wrap" id="stage-wrap">
+  <main id="stage" aria-live="polite"></main>
+</div>
+<footer class="bottom">
+  <button class="ghost" id="prev" data-action="prev" type="button">السابق</button>
+  <div class="progress" aria-hidden="true"><div id="bar"></div></div>
+  <span class="hint">التالي: سهم يسار · السابق: سهم يمين · M القائمة · F ملء الشاشة</span>
+  <button class="primary" id="next" data-action="next" type="button">التالي</button>
+</footer>
+<div id="menu" class="overlay" hidden>
+  <div class="drawer">
+    <div class="brand"><span class="mark">Git</span><span>محتوى الورشة</span></div>
+    <div id="menu-list"></div>
+  </div>
+</div>
+<noscript><p style="padding:24px">هذا العرض يحتاج تفعيل JavaScript في المتصفح.</p></noscript>
+<script>
+const COMMANDS = [
+  { key: "init", name: "git init", role: "إنشاء مستودع محلي", when: "بداية مشروع جديد على الجهاز، قبل أي commit.", example: "مجلد صفحة شخصية فاضي يصير مستودعًا ويتابع الملفات من هذه اللحظة.", code: "mkdir my-first-project\ncd my-first-project\ngit init\n# Initialized empty Git repository in .../my-first-project/.git/" },
+  { key: "clone", name: "git clone", role: "نسخ مستودع موجود", when: "تبون تشتغلون على مشروع موجود على GitHub من جهازكم.", example: "تنسخون مستودع الورشة لجهازكم عشان تقرونه وتجرّبون الأوامر عليه.", code: "git clone https://github.com/USERNAME/GitHub-Workshop.git\ncd GitHub-Workshop" },
+  { key: "status", name: "git status", role: "عرض حالة الملفات", when: "قبل الحفظ، عشان تعرفون وش تغيّر ولم يُسجَّل.", example: "أضفنا index.html وما سوينا commit. الأمر يقول إن الملف غير متتبَّع.", code: "git status\n# On branch main\n# Untracked files:\n#   index.html" },
+  { key: "diff", name: "git diff", role: "تفاصيل التعديل", when: "تبون تشوفون السطر القديم والجديد قبل git add.", example: "غيّرنا عنوان الصفحة من Hello إلى مرحبًا، فتظهر السطرين.", code: "git diff\n# - <h1>Hello</h1>\n# + <h1>مرحبًا</h1>" },
+  { key: "add", name: "git add", role: "تجهيز الملفات للتسجيل", when: "بعد ما تتأكدون من التعديل وتبون يدخل في الـ commit الجاي.", example: "تجهّزون index.html وحده، أو كل التعديلات مرة واحدة بـ git add .", code: "git add index.html\n# أو لتجهيز كل الملفات:\ngit add ." },
+  { key: "commit", name: "git commit", role: "تسجيل التغييرات برسالة", when: "اكتملت مجموعة تعديلات لها معنى واحد.", example: "خلصت أول صفحة، فتسجّلون لقطة بعنوان واضح يفهمها الفريق بعد شهر.", code: "git commit -m \"Add first project file\"" },
+  { key: "push", name: "git push", role: "رفع التغييرات إلى GitHub", when: "تبون النسخة على GitHub تصير مثل نسختكم على الجهاز.", example: "بعد commit الصفحة، ترفعونها فيصير الرابط يفتح المشروع لأي شخص تعطونه إياه.", code: "git push -u origin main" },
+  { key: "pull", name: "git pull", role: "جلب التحديثات ودمجها", when: "أحد دفع تعديلات جديدة وتبون نسختكم تلحقه.", example: "زميل أضاف سطرًا في README. تسحبون التحديث قبل ما تكمّلون شغلكم.", code: "git pull" },
+  { key: "switch", name: "git switch", role: "الانتقال بين الفروع", when: "تبون تشتغلون على ميزة بدون ما تلمسون النسخة الأساسية.", example: "تفتحون فرع صفحة الدخول، وفرع main يبقى على الصفحة الرئيسية كما هي.", code: "git switch -c feature/login-page" },
+  { key: "merge", name: "git merge", role: "دمج فرع في فرع آخر", when: "المراجعة خلصت، وتبون التعديل يصير جزءًا من النسخة الأساسية.", example: "بعد الموافقة على صفحة الدخول، تندمج في main فيصير المشروع فيه الصفحتين.", code: "git switch main\ngit merge feature/login-page" },
+  { key: "log", name: "git log", role: "سجل التعديلات", when: "تبون تعرفون وش انسجل، ومن كتبه، وبأي رسالة.", example: "تشوفون تسجيل البداية ثم تسجيل أول ملف، وترجعون للفكرة ورا كل واحد.", code: "git log --oneline\n# a1b2c3d Add first project file\n# 9f8e7d6 Initial commit" },
+  { key: "remote", name: "git remote", role: "روابط المستودع البعيد", when: "تربطون المجلد المحلي بمستودع GitHub، أو تتأكدون من الرابط.", example: "بعد ما تنشئون my-first-project على GitHub، تربطونه بالمجلد اللي على جهازكم.", code: "git remote add origin https://github.com/USERNAME/my-first-project.git\ngit remote -v" }
+];
+
+const TOUR = [
+  { key: "dash", name: "Dashboard", role: "صفحتكم بعد الدخول", what: "نقطة البداية: نشاطكم، مستودعاتكم، والمشاريع التي تتابعونها.", uses: ["تفتحون آخر مستودع اشتغلتوا عليه", "تشوفون طلبات الدمج التي تنتظركم"], example: "بعد تسجيل الدخول تظهر لوحة فيها مستودع GitHub-Workshop، فتضغطونه وتكمّلون من حيث وقفتوا." },
+  { key: "repos", name: "Repositories", role: "قائمة المستودعات", what: "المستودع هو مكان ملفات المشروع مع تاريخ كل تغيير صار عليها.", uses: ["مشروع صفحة", "مشروع الورشة", "تمرين شخصي"], example: "حسابكم فيه مستودعين: my-first-project لصفحتكم، وGitHub-Workshop للورشة." },
+  { key: "code", name: "Code", role: "ملفات المشروع", what: "يعرض المجلدات والملفات، ومنه ننسخ الرابط أو ننزّل نسخة.", uses: ["استعراض الملفات", "فتح الكود", "نسخ الرابط", "تنزيل ZIP"], example: "تفتحون Code في مستودع الورشة فتشوفون README.md ومجلد contributions وداخله ملفاتكم." },
+  { key: "readme", name: "README.md", role: "تعريف المشروع", what: "أول ملف يقرأه الزائر. يشرح الفكرة والتشغيل والمساهمة.", uses: ["اسم المشروع", "فكرته", "طريقة التشغيل", "طريقة المساهمة"], example: "في مستودع الورشة، الـ README يقول: اضغط Fork، أضف ملفك داخل contributions، ثم افتح Pull Request." },
+  { key: "issues", name: "Issues", role: "مهام ومشكلات", what: "نسجّل فيها الخطأ أو الاقتراح أو المهمة عشان ما تضيع في المحادثة.", uses: ["خطأ في تسجيل الدخول", "نحتاج صفحة جديدة", "تحسين تصميم الواجهة"], example: "تفتحون Issue بعنوان: زر الدخول يختفي على الجوال، وتكتبون الخطوات التي جرّبتوها." },
+  { key: "pr", name: "Pull Requests", role: "طلب مراجعة ودمج", what: "المطور يعرض تعديله، والفريق يراجعه قبل ما يدخل على المشروع الأساسي.", uses: ["قراءة الفرق", "كتابة تعليق", "الموافقة والدمج"], example: "ملف dev-01.md ينتظر في Pull requests. نقرأه مع بعض، ثم يندمج إذا كان واضحًا." },
+  { key: "actions", name: "Actions", role: "أتمتة إجراءات", what: "تشغّل خطوات تلقائية عند رفع تعديل، مثل تشغيل الاختبارات.", uses: ["تشغيل الاختبارات مع كل push"], example: "كل ما أحد دفع تعديل، يشتغل فحص تلقائي ويقول إذا الصفحة ما زالت تفتح بدون خطأ." },
+  { key: "projects", name: "Projects", role: "لوحة متابعة", what: "ترتب المهام على لوحة: لم يبدأ، جارٍ، اكتمل.", uses: ["متابعة مهام الورشة", "معرفة من يأخذ أي جزء"], example: "بطاقة «كتابة README» تنتقل من عمود «جارٍ» إلى «اكتمل» لما يندمج الطلب." },
+  { key: "settings", name: "Settings", role: "إعدادات المستودع", what: "مكان الصلاحيات وحماية الفروع وخصوصية المستودع.", uses: ["إدارة الصلاحيات", "حماية الفروع", "إعدادات عامة"], example: "الكتابة المباشرة على main مقفلة، فالتغيير ما يدخل إلا عن طريق Pull Request." }
+];
+
+const TROUBLES = [
+  { key: "account", name: "ما عنده حساب", role: "يسجّل أو يتابع", doText: "ساعديه يسجّل بسرعة، أو خليه يتابع على الشاشة ويشارك مع شخص عنده حساب.", example: "افتحي github.com/signup على جهازه. إذا طال النموذج، يجلس مع زميل مسجّل ويدخلون ملف مساهمة واحد باسميهما." },
+  { key: "upload", name: "ما قدر يرفع ملف", role: "ارجعي للمتصفح", doText: "اتركي Terminal واستخدمي Upload files من صفحة المستودع.", example: "يسحب introduction.txt إلى صفحة الرفع، ويكتب في الرسالة Add my introduction، ويضغط Commit changes." },
+  { key: "nogit", name: "Git غير مثبّت", role: "كمّلي من الموقع", doText: "لا تنتظرين التثبيت. كل الخطوات الأساسية تنفع من المتصفح.", example: "من Add file ثم Create new file يكتب hello.txt ويحفظه، بدون أي أمر محلي." },
+  { key: "link", name: "نسي رابط المستودع", role: "اعرضي رابط الورشة", doText: "اكتبي رابط مستودع الورشة على الشاشة واتركيه ثابتًا.", example: "تكتبين github.com/USERNAME/GitHub-Workshop بخط كبير، والجميع يفتح نفس الصفحة." },
+  { key: "login", name: "خطأ في تسجيل الدخول", role: "تحققي من المصادقة", doText: "تأكدي من المتصفح المسجّل. لا تكتبين كلمة المرور ولا مفتاح الوصول أمام الحضور.", example: "تظهر نافذة GitHub في المتصفح تطلب الإذن. توافقين من حسابك المعد مسبقًا، بدون ما يبان السر." },
+  { key: "pr", name: "ما لقى Pull Request", role: "وجّهيه للتبويب", doText: "افتحي معه تبويب Pull requests في المستودع الأصلي، ثم New pull request.", example: "الأساس هو مستودع الورشة، والمقارنة هي نسخته التي فيها ملف contributions/dev-01.md." },
+  { key: "conflict", name: "صار Merge Conflict", role: "اشرحيه بمثال", doText: "لا تعالجين تعارضًا معقدًا أمام الجميع. اشرحي الفكرة بمثال سطر واحد.", example: "شخص كتب Welcome to GitHub وشخص كتب Welcome to our project في نفس السطر. نختار جملة أو نجمعهما." },
+  { key: "net", name: "انقطع الإنترنت", role: "كمّلي بملفات محلية", doText: "لا تنتظرين الشبكة. اشرحي الخطوة من صورة أو من المستودع المفتوح قبل الانقطاع.", example: "لقطة محفوظة لصفحة Create repository، وتكمّلين شرح Commit من ملف محلي على الجهاز." },
+  { key: "time", name: "ضاق الوقت", role: "اختصري الأوامر", doText: "اختصري الأوامر إلى أربعة، وحافظي على النشاط الجماعي لأنه مقصد الورشة.", example: "تعرضين status ثم add ثم commit ثم push، وتنتقلين مباشرة إلى Fork وPull Request." }
+];
+
+const QUESTIONS = [
+  { q: "ما المشكلة التي يحلها Git؟", choices: ["ترتيب الأيقونات على سطح المكتب", "تتبع التغيير والرجوع لنسخة سابقة", "رسم شكل الموقع"], correct: 1, a: "يتتبع التعديلات، يبيّن من غيّر ومتى، ويرجّعكم لنسخة سابقة، ويرتّب شغل أكثر من شخص على نفس الملفات.", example: "بدل نسخ المجلد إلى project-final-last، تسجّلون commit وترجعون له إذا انكسر الكود." },
+  { q: "هل Git وGitHub شيء واحد؟", choices: ["نعم، اسمان لنفس الأداة", "Git على الجهاز، وGitHub على الإنترنت", "GitHub أمر نكتبه في Terminal"], correct: 1, a: "اسمان لشيئين. Git أداة على جهازكم لإدارة الإصدارات. GitHub منصة على الإنترنت لاستضافة المشروع والتعاون عليه.", example: "تسوون commit بدون إنترنت. ولما تبغون الفريق يشوف الشغل، تسوون push إلى GitHub." },
+  { q: "ما الفرق بين Repository وBranch؟", choices: ["ما فيه فرق", "المستودع هو المشروع، والفرع خط شغل داخله", "الفرع هو حساب GitHub"], correct: 1, a: "المستودع هو المشروع مع تاريخه كاملًا. الفرع خط عمل داخل هذا المستودع.", example: "مستودع my-first-project فيه فرع main للصفحة الجاهزة، وفرع feature/login-page لتجربة الدخول." },
+  { q: "متى نستخدم Commit؟", choices: ["كل ما نضغط Save في المحرر", "لما تكتمل تعديلات لها معنى، ومعها رسالة", "مرة واحدة في آخر المشروع"], correct: 1, a: "لما تكتمل مجموعة تعديلات لها معنى واحد، وتبون تسجيلها مع رسالة توضّح السبب.", example: "خلصت أول صفحة: git commit -m \"Add first project file\"" },
+  { q: "لماذا نترك Main للشغل الجاهز؟", choices: ["عشان النسخة التي يعتمد عليها الفريق تبقى سليمة", "لأن Main ما يقبل ملفات", "عشان Git ما يشتغل إلا على الفروع"], correct: 0, a: "main هو النسخة التي يعتمد عليها الباقون. الشغل غير الجاهز يصير على فرع، ثم يدخل بعد المراجعة.", example: "تجربة لون الزر تصير على فرع، والصفحة التي يفتحها الفريق تبقى سليمة." },
+  { q: "ما الفائدة من Pull Request؟", choices: ["يحذف الفرع الثاني", "يعرض التعديل للمراجعة قبل الدمج", "يرفع الملف بدون رسالة"], correct: 1, a: "يعرض التعديل للقراءة والنقاش قبل ما يصير جزءًا من المشروع الأساسي.", example: "زميل يقرأ فرق login.html ويطلب توضيح جملة، وبعدها يتم الدمج." },
+  { q: "هل يقدر أكثر من شخص يشتغل على نفس المشروع؟", choices: ["لا، المستودع لشخص واحد", "نعم، كل شخص على فرع أو Fork ثم يندمج الشغل", "نعم، بشرط يعدّلون نفس السطر في نفس اللحظة"], correct: 1, a: "نعم. كل شخص يعمل على فرع أو على نسخة Fork، ثم تُدمج التعديلات بعد المراجعة.", example: "واحد يضيف صفحة الدخول، وواحد يضيف ملف مساهمة، والاثنان لا يمسحان عمل بعض." },
+  { q: "ماذا يحدث إذا عدّل شخصان نفس السطر؟", choices: ["ينحذف الملف", "يظهر تعارض، ونقرر كيف نجمع السطرين", "يفوز آخر شخص ضغط حفظ"], correct: 1, a: "يظهر Merge Conflict. Git يتوقف ويطلب قرارًا: أي جملة تُعتمد، أو كيف يُجمع النصّان.", example: "سطر Welcome to GitHub وسطر Welcome to our project وقعا على نفس المكان في الملف." },
+  { q: "هل GitHub للمبرمجين فقط؟", choices: ["نعم، للمبرمجين فقط", "أي شغل يحتاج نسخًا ومراجعة ينفع هنا", "فقط للشركات الكبيرة"], correct: 1, a: "يفيد أي عمل يحتاج نسخًا ومراجعة وتعاونًا: كتابة، توثيق، تصميم، وتعليم.", example: "فريق الورشة يكتب الدليل في ملفات Markdown، ويقترح التعديل عبر Pull Request." },
+  { q: "كيف يصير GitHub ملف أعمال؟", choices: ["نرفع السيرة PDF داخل Issue", "مستودع عام، وREADME يشرح المشروع، والرابط في السيرة", "GitHub ما يعرض المشاريع للناس"], correct: 1, a: "تُنشر المشاريع في مستودعات عامة، ويشرحها README، ويُوضع الرابط في السيرة أو الموقع.", example: "مستودع personal-website فيه الصفحة وخطوات تشغيلها، والرابط يفتحه أي شخص من سيرتك." }
+];
+
+const CHECKS = [
+  { group: "قبل الورشة", id: "b1", text: "تجهيز حساب GitHub" },
+  { group: "قبل الورشة", id: "b2", text: "تجهيز مستودع GitHub-Workshop" },
+  { group: "قبل الورشة", id: "b3", text: "إضافة ملف README" },
+  { group: "قبل الورشة", id: "b4", text: "تجهيز مجلد contributions" },
+  { group: "قبل الورشة", id: "b5", text: "تجربة Fork وPull Request بحساب آخر" },
+  { group: "قبل الورشة", id: "b6", text: "تثبيت Git وتجربة الأوامر" },
+  { group: "قبل الورشة", id: "b7", text: "فتح هذا العرض وتجربة التنقّل" },
+  { group: "قبل الورشة", id: "b8", text: "التأكد من الإنترنت والشاشة" },
+  { group: "أثناء الورشة", id: "d1", text: "طرح سؤال الافتتاح وأخذ إجابتين" },
+  { group: "أثناء الورشة", id: "d2", text: "شرح الفرق بين Git وGitHub" },
+  { group: "أثناء الورشة", id: "d3", text: "استعراض واجهة GitHub" },
+  { group: "أثناء الورشة", id: "d4", text: "إنشاء مستودع أمام الحضور" },
+  { group: "أثناء الورشة", id: "d5", text: "رفع ملف وتنفيذ Commit" },
+  { group: "أثناء الورشة", id: "d6", text: "تجربة أوامر Git الأساسية" },
+  { group: "أثناء الورشة", id: "d7", text: "شرح Branch وPull Request" },
+  { group: "أثناء الورشة", id: "d8", text: "تنفيذ النشاط الجماعي" },
+  { group: "أثناء الورشة", id: "d9", text: "مراجعة مشاركات ودمج بعضها" },
+  { group: "بعد الورشة", id: "a1", text: "مشاركة رابط المستودع" },
+  { group: "بعد الورشة", id: "a2", text: "مشاركة روابط المصادر" },
+  { group: "بعد الورشة", id: "a3", text: "شكر المشاركين" },
+  { group: "بعد الورشة", id: "a4", text: "الإبقاء على المساهمات كتوثيق للورشة" }
+];
+
+const PHRASES = [
+  { when: "بعد الافتتاح", say: "خلونا نبدأ من المشكلة نفسها قبل ما ندخل في الأدوات." },
+  { when: "بعد شرح Git وGitHub", say: "الحين عرفنا الفرق بينهم، خلونا نشوف المنصة ونكتشف وش موجود داخلها." },
+  { when: "عند الانتقال للتطبيق", say: "ما أبي نكتفي بالمشاهدة، خلونا كلنا ننشئ مستودع ونرفع أول ملف." },
+  { when: "عند شرح الأوامر", say: "الآن بننتقل من التعامل مع GitHub بالمتصفح إلى استخدام Git مباشرة من الجهاز." },
+  { when: "عند شرح Branch", say: "تخيلوا أننا نعمل ضمن فريق، وكل شخص مسؤول عن جزء من المشروع. كيف نضمن أن التعديلات ما تتداخل؟ هنا نحتاج الفروع." },
+  { when: "عند النشاط الجماعي", say: "الحين جاء دوركم. بنشتغل على مشروع واحد، وكل شخص بيضيف مساهمته بنفسه." },
+  { when: "عند الختام", say: "اليوم ما تعلمنا مجرد أوامر، بل أخذنا فكرة عن طريقة إدارة المشاريع البرمجية والعمل الجماعي عليها." }
+];
+
+const README_TEXT = `# GitHub Workshop | من الكود إلى المشروع
+
+مرحبًا بكم في مستودع ورشة Git وGitHub.
+
+## عن الورشة
+ورشة تطبيقية تهدف إلى تعريف المشاركين بأساسيات Git وGitHub، وإدارة إصدارات المشاريع البرمجية، والتعاون من خلال المستودعات والفروع وطلبات الدمج.
+
+## أهداف الورشة
+- التعرف على Git وGitHub.
+- إنشاء Repository.
+- رفع الملفات وإدارة التعديلات.
+- استخدام أوامر Git الأساسية.
+- فهم Branch وPull Request.
+- المشاركة في مشروع جماعي.
+
+## طريقة المشاركة
+
+1. اضغط Fork لإنشاء نسخة من المستودع.
+2. افتح مجلد contributions.
+3. أنشئ ملفًا جديدًا باسم اختياري.
+4. أضف معلومة تعلمتها خلال الورشة.
+5. نفذ Commit للتغييرات.
+6. أنشئ Pull Request إلى المستودع الأصلي.
+
+## نموذج المشاركة
+
+Name:
+
+What I learned:
+
+Git command:
+
+My question:
+
+## تنبيه
+لا ترفع معلومات شخصية حساسة أو كلمات مرور أو مفاتيح API.
+
+## شكرًا لمشاركتكم
+كل مساهمة تمثل خطوة في تعلم العمل الجماعي وإدارة المشاريع البرمجية.
+`;
+
+const AGENDA = [
+  { time: "00–10", title: "الافتتاح", what: "التعارف وطرح سؤال تفاعلي", id: "opening" },
+  { time: "10–20", title: "المشكلة والحل", what: "لماذا نحتاج Git؟", id: "why-git" },
+  { time: "20–35", title: "التعرف على GitHub", what: "شرح الواجهة والأقسام", id: "tour" },
+  { time: "35–50", title: "إنشاء مستودع", what: "إنشاء Repository ورفع ملف", id: "create" },
+  { time: "50–65", title: "أساسيات Git", what: "شرح الأوامر وتطبيقها", id: "commands" },
+  { time: "65–80", title: "Branch وPull Request", what: "شرح التعاون بين المطورين", id: "branch" },
+  { time: "80–105", title: "التحدي الجماعي", what: "مشاركة جميع الحضور", id: "activity" },
+  { time: "105–115", title: "مراجعة المشاركات", what: "استعراض Pull Requests ودمجها", id: "review" },
+  { time: "115–120", title: "الختام", what: "مراجعة ما تعلمناه", id: "close" }
+];
+
+function esc(s) {
+  return String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+}
+function exampleBox(text, code) {
+  if (!text && !code) return "";
+  return `<aside class="example"><p><span class="ex-label">مثال</span>${text ? esc(text) : ""}</p>${code ? `<pre>${esc(code)}</pre>` : ""}</aside>`;
+}
+function pointsHtml(items) {
+  return items.map((item) => `
+    <div class="point">
+      <h3>${esc(item.title)}</h3>
+      ${item.text ? `<p>${esc(item.text)}</p>` : ""}
+      ${item.example ? `<p class="ex"><span class="ex-label">مثال</span>${esc(item.example)}</p>` : ""}
+      ${item.code ? `<pre>${esc(item.code)}</pre>` : ""}
+    </div>`).join("");
+}
+function askHtml(q) {
+  return q ? `<p class="ask"><span>سؤال لكم</span>${esc(q)}</p>` : "";
+}
+function calloutHtml(text) {
+  return text ? `<div class="callout">${esc(text)}</div>` : "";
+}
+function explorer(slideId, items, detail) {
+  const current = items.find((item) => item.key === ui.selected[slideId]) || items[0];
+  const list = items.map((item) => `
+    <button class="pick ${item.key === current.key ? "on" : ""}" type="button" data-action="pick" data-key="${esc(item.key)}">
+      <span class="pick-title">${esc(item.name)}</span>
+      <span class="pick-role">${esc(item.role || "")}</span>
+    </button>`).join("");
+  return `<div class="explorer"><div class="explorer-list">${list}</div><div class="detail">${detail(current)}</div></div>`;
+}
+
+const slides = [
+  {
+    id: "cover", section: "البداية", menu: "العنوان", audience: true,
+    notes: "رحّبي باختصار. قولي إن الورشة تطبيقية: بنهاية الوقت يكون كل شخص رفع ملفًا وشارك في مشروع، مو بس حفظ تعريف Git.",
+    type: "cover"
+  },
+  {
+    id: "outcomes", section: "البداية", menu: "أهداف الورشة", audience: true,
+    notes: "اقرئي الأهداف بسرعة. قفي عند الأخير: المشاركة الجماعية هي مقصد الورشة، والباقي يوصل لها.",
+    type: "outcomes"
+  },
+  {
+    id: "agenda", section: "البداية", menu: "خريطة الوقت", audience: true,
+    notes: "لا تقرئي الجدول خانة خانة. أشيري إلى التطبيق في النص وإلى النشاط في الدقيقة 80. اضغطي أي صف للانتقال إليه.",
+    type: "agenda"
+  },
+  {
+    id: "thread", section: "البداية", menu: "مثالان نمشي معهما", audience: true,
+    notes: "ثبّتي المثالين من البداية حتى لا يختلط مستودع كل شخص مع مستودع الورشة المشترك.",
+    type: "thread"
+  },
+  {
+    id: "prep-accounts", section: "البداية", menu: "جاهزين؟", audience: true,
+    notes: "",
+    type: "points",
+    kicker: "قبل ما نبدأ",
+    title: "تأكدوا إنكم جاهزين",
+    lead: "إذا شي ناقص، كمّلوه الحين. اللي ما يخلّص يتابع على الشاشة مع زميله.",
+    items: [
+      { title: "حساب GitHub", text: "افتحوا github.com. إذا ما عندكم حساب، اضغطوا Sign up.", example: "اسم مستخدم مثل dev-noor، ثم تأكيد من رسالة البريد." },
+      { title: "أنتم مسجّلين دخول", text: "خلّوا المتصفح مفتوح وحسابكم ظاهر.", example: "صورة الحساب موجودة أعلى الصفحة." },
+      { title: "جهازكم قدامكم", text: "الخطوات على الشاشة الكبيرة، وأنتم تكررونها.", example: "كل شخص يفتح نفس الصفحة على جهازه." },
+      { title: "Git اختياري", text: "اللي يبي يجرب الأوامر يثبّت Git. الباقي يكمّل من الموقع.", example: "بعد التثبيت، git --version يطبع رقم الإصدار." }
+    ],
+    callout: "من الموقع: github.com للحساب، و git-scm.com/downloads لتثبيت Git."
+  },
+  {
+    id: "prep-repo", section: "البداية", menu: "مشروعنا اليوم", audience: true,
+    notes: "شددي على قاعدة واحدة: لا صلاحية كتابة مباشرة على الأصل. المساهمة تكون Fork ثم Pull Request. جرّبي المسار بحساب ثانٍ قبل الموعد.",
+    type: "repo"
+  },
+  {
+    id: "opening", section: "الافتتاح", menu: "سؤال الافتتاح", audience: true,
+    notes: "خذي إجابتين أو ثلاثًا قبل الضغط على إظهار الفكرة. لا تصححين الإجابات. اربطيها بإدارة التغيير.",
+    type: "reveal",
+    kicker: "00–10 دقائق · الافتتاح",
+    title: "لو عدّل كل واحد على نفس الملف؟",
+    lead: "لو كنتوا تعملون على مشروع برمجي، وكل واحد منكم عدّل على نفس الملف، كيف بتعرفون وش التعديلات اللي صارت؟ وكيف ترجعون للنسخة السابقة لو صار خطأ؟",
+    button: "إظهار الفكرة بعد الإجابات",
+    hiddenTitle: "الفكرة التي نخرج بها",
+    hidden: "في المشاريع البرمجية، المشكلة ليست فقط كتابة الكود. المشكلة أيضًا في إدارة التغييرات، وحفظ النسخ، والعمل الجماعي. من هنا تظهر أهمية Git وGitHub.",
+    nextLine: "خلونا نشوف كيف نحل هالمشكلة، ونتعرف على الأدوات اللي يستخدمها المطورون."
+  },
+  {
+    id: "why-git", section: "لماذا Git", menu: "ما هو Git؟", audience: true,
+    notes: "عرّفي Git كنظام إصدارات، ثم مثّلي كل فائدة بجملة الصفحة. سؤال النسخ المتعددة في الشريحة التي بعد المقارنة.",
+    type: "points",
+    kicker: "10–20 دقيقة · المشكلة والحل",
+    title: "Git نظام لإدارة الإصدارات",
+    lead: "Version Control System: يسجّل تاريخ المشروع على جهازكم، حتى لو ما فيه إنترنت.",
+    ask: "ما المشكلة التي يحلها Git؟",
+    items: [
+      { title: "تتبّع التعديلات", text: "كل تغيير ينسجل كخطوة، مو كملف ضاع فوق ملف.", example: "غيّرنا عنوان index.html من Hello إلى مرحبًا. السجل يحتفظ بالعنوانين ويعرف أيهما الأحدث." },
+      { title: "معرفة من عدّل ومتى", text: "كل تسجيل يحمل صاحبه ووقته ورسالته.", example: "بعد أسبوع نعرف أن زر الدخول تعدّل يوم الثلاثاء، من رسالة Add login page." },
+      { title: "الرجوع إلى نسخة سابقة", text: "إذا انكسر المشروع، ترجعون لآخر نقطة كانت سليمة.", example: "لون الزر صار أبيض على خلفية بيضاء. نرجع لتسجيل أمس والزر يرجع واضحًا." },
+      { title: "العمل على أكثر من إصدار", text: "تجرّبون فكرة في خط مستقل بينما النسخة المستقرة تبقى كما هي.", example: "نجرب صفحة دخول على فرع، والصفحة الرئيسية تظل متاحة للباقين." },
+      { title: "دمج تعديلات الفريق", text: "شغل أكثر من شخص يجتمع في نسخة واحدة بعد ما يتراجعون.", example: "واحدة تضيف فقرة وأخرى تضيف تذييلًا. الدمج يخلي الصفحة فيها الاثنين." }
+    ]
+  },
+  {
+    id: "why-github", section: "لماذا Git", menu: "ما هو GitHub؟", audience: true,
+    notes: "GitHub هو مكان الرفع والمراجعة. لا تقولين إنه برنامج بديل عن Git. هو يستضيف مستودعات Git.",
+    type: "points",
+    kicker: "10–20 دقيقة · المشكلة والحل",
+    title: "GitHub منصة لاستضافة التعاون",
+    lead: "تحفظون المشروع على الإنترنت، تشاركون الكود، وتراجعون شغل الفريق من مكان واحد.",
+    ask: "هل GitHub مفيد فقط للمبرمجين؟",
+    items: [
+      { title: "حفظ المشاريع", text: "نسخة على الإنترنت تبقى حتى لو تعطل الجهاز.", example: "رفعتوا my-first-project. إذا تعطل اللابتوب، الصفحة باقية على الحساب." },
+      { title: "مشاركة الأكواد", text: "رابط واحد يفتح المشروع لمن ترسلونه له.", example: "ترسلون github.com/USERNAME/my-first-project لزميل فيقرأ index.html من المتصفح." },
+      { title: "التعاون مع المطورين", text: "أكثر من شخص يشتغلون على نفس المستودع بترتيب.", example: "في GitHub-Workshop كل واحد يضيف ملفه، والأصل يجمع المساهمات." },
+      { title: "مراجعة التعديلات", text: "التعديل يتعرض للقراءة قبل ما يصير رسميًا.", example: "نقرأ ملف مساهمة وندمجه بعد ما نتأكد أن ما فيه بيانات شخصية." },
+      { title: "إدارة المهام والمشكلات", text: "الاقتراح والخطأ ينسجلان في Issue بدل ما يضيعان في المحادثة.", example: "Issue بعنوان: نحتاج صفحة جديدة للتعريف بالورشة، وفيه وصف من سطرين." },
+      { title: "مو محصورًا في كتابة البرامج", text: "أي ملفات تحتاج نسخًا ومراجعة تصلح هنا: توثيق، كتابة، مواد تعليمية.", example: "فريق يكتب دليل الورشة في ملفات Markdown، ويقترح تعديل فقرة عبر Pull Request." }
+    ]
+  },
+  {
+    id: "compare", section: "لماذا Git", menu: "الفرق بينهما", audience: true,
+    notes: "اسألي: هل هما شيء واحد؟ الإجابة من الجدول: Git على الجهاز وبالأوامر، GitHub على الإنترنت وبالواجهة.",
+    type: "compare"
+  },
+  {
+    id: "story", section: "لماذا Git", menu: "نسخ المشروع", audience: true,
+    notes: "اتركي الأسماء ظاهرة لحظة. غالبًا أحد يضحك لأنه سوّاها. بعدها أظهري سجل Git كبديل.",
+    type: "story"
+  },
+  {
+    id: "tour", section: "جولة GitHub", menu: "جولة في الواجهة", audience: true,
+    notes: "لا تتوسعين في الأقسام التسعة. افتحي الموقع الحقيقي بجانب العرض، ومرّي على Code وREADME وIssues وPull requests. الباقي تعرّف سريع.",
+    type: "tour"
+  },
+  {
+    id: "create", section: "المستودع", menu: "إنشاء مستودع", audience: true,
+    notes: "طبّقي ببطء على الشاشة بنفس الاسم المكتوب حتى يطابقون خطواتهم. Public أوضح للورشة.",
+    type: "steps",
+    kicker: "35–50 دقيقة · إنشاء المستودع",
+    title: "إنشاء Repository من الصفر",
+    lead: "المثال الذي ننشئه معًا: my-first-project، وصفحة تعريف قصيرة، ومستودع عام فيه README.",
+    items: [
+      { title: "اضغطوا علامة +", text: "من الصفحة الرئيسية بعد تسجيل الدخول.", example: "العلامة أعلى الموقع. إذا ما بان الحساب، سجّلوا الدخول أولًا." },
+      { title: "اختاروا New repository", text: "يفتح نموذج مستودع جديد.", example: "عنوان الصفحة يصير Create a new repository." },
+      { title: "اكتبوا اسم المستودع", text: "اسم متصل، بدون مسافات، يوصف المشروع.", example: "my-first-project" },
+      { title: "أضيفوا وصفًا مختصرًا", text: "سطر واحد يكفي.", example: "صفحتي الأولى لتعلّم Git" },
+      { title: "اختاروا Public", text: "العام يراه الناس. الخاص يبقى لحسابكم فقط.", example: "اليوم نختار Public حتى نقدر نفتح الرابط مع بعض." },
+      { title: "فعّلوا Add a README file", text: "يبدأ المستودع بملف تعريف بدل ما يكون فارغًا.", example: "يظهر README.md فيه اسم my-first-project." },
+      { title: "اضغطوا Create repository", text: "تنفتح صفحة المستودع.", example: "تشوفون تبويب Code وملف README فقط. هذا أول commit باسم Initial commit." }
+    ]
+  },
+  {
+    id: "upload", section: "المستودع", menu: "رفع ملف", audience: true,
+    notes: "الرفع من المتصفح هو خطة الأمان إذا Terminal تعطل. اعمليه مرة أمامهم حتى لو بتكررين الأمر لاحقًا.",
+    type: "steps",
+    kicker: "35–50 دقيقة · رفع ملف",
+    title: "رفع ملف من الجهاز",
+    lead: "نرفع index.html: صفحة من سطرين، عنوانها مرحبًا، وفقرتها أنا أتعلم Git.",
+    items: [
+      { title: "اضغطوا Add file", text: "داخل صفحة المستودع.", example: "القائمة تظهر وفيها Upload files وCreate new file." },
+      { title: "اختاروا Upload files", text: "تفتح منطقة سحب الملفات.", example: "صندوق مكتوب فيه Drag files here." },
+      { title: "اسحبوا الملف", text: "ملف واحد يكفي في أول مرة.", example: "تسحبون index.html من سطح المكتب إلى الصندوق فيظهر اسمه." },
+      { title: "اكتبوا وصف التعديل", text: "هذه رسالة الـ commit، مو اسم الملف.", example: "Add the first page" },
+      { title: "اضغطوا Commit changes", text: "GitHub يسجّل النسخة ويظهر الملف.", example: "ترجعون إلى Code فتلقون index.html تحت README، وتحته الرسالة Add the first page." }
+    ]
+  },
+  {
+    id: "commit", section: "المستودع", menu: "معناه Commit", audience: true,
+    notes: "قفي عند الجملة: Commit ليس حفظًا عاديًا. هو تسجيل نسخة مع سبب. اسألي متى نستخدمه واتركي إجابتين.",
+    type: "commit"
+  },
+  {
+    id: "exercise", section: "المستودع", menu: "تطبيق الحضور", audience: true,
+    notes: "امشي بين الصفوف. المطلوب ملف واحد وجملة واحدة. من علّق، ساعديه من Upload files ولا تفتحين مشكلة Terminal هنا.",
+    type: "exercise"
+  },
+  {
+    id: "split", section: "أوامر Git", menu: "الموقع والجهاز", audience: true,
+    notes: "قولي: الموقع أسهل للبداية، والأوامر نحتاجها لما المشروع يكبر. ثم انتقلي للأوامر الأربعة: status وadd وcommit وpush.",
+    type: "split"
+  },
+  {
+    id: "commands", section: "أوامر Git", menu: "الأوامر", audience: true,
+    notes: "لا تشرحين الاثني عشر أمرًا. افتحي status وadd وcommit وpush. قولي إن الباقي موجود هنا ويرجعون له.",
+    type: "commands"
+  },
+  {
+    id: "local", section: "أوامر Git", menu: "تطبيق محلي", audience: true,
+    notes: "طبّقي بنفس الأسماء على الشاشة. إذا طلب Git اسمًا وبريدًا، هذا إعداد جهّزتيه مسبقًا، لا تفتحين إعداده أمامهم.",
+    type: "steps",
+    kicker: "50–65 دقيقة · من الجهاز",
+    title: "من مجلد فاضي إلى أول Commit",
+    lead: "نفس مشروع my-first-project، لكن هذه المرة Git يشتغل داخل المجلد على جهازكم.",
+    items: [
+      { title: "أنشئوا المجلد وادخلوه", text: "مكان واضح على سطح المكتب أو المستندات.", example: "يصير عندكم مجلد فاضي اسمه my-first-project.", code: "mkdir my-first-project\ncd my-first-project" },
+      { title: "فعّلوا Git", text: "الأمر يجعل المجلد مستودعًا محليًا.", example: "يظهر مجلد مخفي اسمه .git. هذا سجل المشروع. خلّوه.", code: "git init\n# Initialized empty Git repository in .../my-first-project/.git/" },
+      { title: "أنشئوا index.html", text: "صفحة قصيرة من المحرر.", example: "العنوان مرحبًا، والفقرة: أنا أتعلم Git.", code: "<h1>مرحبًا</h1>\n<p>أنا أتعلم Git.</p>" },
+      { title: "شوفوا الحالة", text: "Git يخبركم ما الذي تغيّر ولم يُسجَّل.", example: "index.html يظهر كملف Untracked، يعني جديد وما دخل السجل.", code: "git status" },
+      { title: "جهّزوا الملف", text: "إضافة الملف لمنطقة التسجيل. النقطة تعني كل التعديلات.", example: "بعد git add يصير الملف جاهزًا للتسجيل، لكن لم يُسجَّل بعد.", code: "git add index.html\ngit add ." },
+      { title: "سجّلوا التغيير", text: "الرسالة تشرح السبب، وتبقى مفهومة بعد شهر.", example: "السجل يصير فيه لقطة واحدة: إضافة أول ملف للمشروع.", code: "git commit -m \"Add first project file\"" }
+    ]
+  },
+  {
+    id: "remote", section: "أوامر Git", menu: "الربط والرفع", audience: true,
+    notes: "جهّزي تسجيل الدخول مسبقًا. إذا ظهرت نافذة المتصفح فوافقي منها. لا تطلبي كلمات مرور ولا تعرضي مفاتيح.",
+    type: "steps",
+    kicker: "50–65 دقيقة · الربط بـ GitHub",
+    title: "اربطوا المجلد بالمستودع ثم ارفعوه",
+    lead: "المستودع على GitHub موجود من خطوة الإنشاء. هنا نربطه بالمجلد المحلي ونرفع التسجيلات.",
+    callout: "إذا ظهرت رسالة تسجيل دخول، كمّلوها من حسابكم. لا تشاركون كلمة المرور ولا مفاتيح الوصول.",
+    items: [
+      { title: "انسخوا رابط المستودع", text: "من زر Code في صفحة GitHub، انسخوا رابط HTTPS.", example: "https://github.com/USERNAME/my-first-project.git" },
+      { title: "أضيفوا الربط باسم origin", text: "origin هو الاسم المعتاد للمستودع البعيد.", example: "المجلد المحلي صار يعرف أين يرفع. git remote -v يعرض الرابط.", code: "git remote add origin https://github.com/USERNAME/my-first-project.git" },
+      { title: "ارفعوا الفرع الرئيسي", text: "u- تحفظ الربط حتى الأوامر القادمة تكون أقصر.", example: "تفتحون صفحة GitHub فتلقون index.html ظاهرًا.", code: "git push -u origin main" },
+      { title: "إذا كان اسم الفرع مختلفًا", text: "بعض المستودعات تبدأ بـ master لا main.", example: "git status يكتب On branch master، فتستخدمون هذا الاسم في الرفع.", code: "git push -u origin master" },
+      { title: "شوفوا السجل", text: "الرسائل من الأحدث إلى الأقدم.", example: "سطر Add first project file ثم سطر Initial commit.", code: "git log --oneline" },
+      { title: "اجلبوا التحديثات", text: "يسحب ما دفعه الآخرون ويدمجه في نسختكم.", example: "زميل عدّل README من الموقع. git pull ينزل سطره إلى مجلدكم.", code: "git pull" }
+    ]
+  },
+  {
+    id: "branch", section: "التعاون", menu: "الفروع", audience: true,
+    notes: "المثال الثابت: الصفحة الرئيسية جاهزة، وصفحة الدخول تجربة. اسألي ليش ما نعدل على main واتركي الإجابة قبل الأوامر.",
+    type: "branch"
+  },
+  {
+    id: "pr", section: "التعاون", menu: "Pull Request", audience: true,
+    notes: "إذا جرّبتِ الحساب الثاني قبل الورشة، افتحي طلب دمج حقيقي. العنوان والوصف أهم من الزر.",
+    type: "pr"
+  },
+  {
+    id: "terms", section: "التعاون", menu: "ست كلمات", audience: true,
+    notes: "هذه ورقة الغش. اقرئيها ببطء واربطي كل كلمة بالمثال الذي صار أمامهم.",
+    type: "terms"
+  },
+  {
+    id: "conflict", section: "التعاون", menu: "تعارض الدمج", audience: true,
+    notes: "قوليها بصوت واضح: التعارض ليس فشلًا. اعرضي الخطوات الثلاث بالزر، ولا تدخلي في أدوات حل متقدمة.",
+    type: "conflict"
+  },
+  {
+    id: "activity", section: "النشاط", menu: "التحدي الجماعي", audience: true,
+    notes: "اتركي الشريحة التالية على الشاشة طول النشاط. تحركي مع أبطأ شخص، لا مع أول من أنهى.",
+    type: "activity-intro"
+  },
+  {
+    id: "activity-steps", section: "النشاط", menu: "خطوات المشاركة", audience: true,
+    notes: "بعد الـ commit مباشرة قد يظهر زر Compare & pull request. هذا اختصار مقبول لنفس الطلب.",
+    type: "activity"
+  },
+  {
+    id: "rules", section: "النشاط", menu: "قواعد النشاط", audience: true,
+    notes: "اذكري القواعد قبل ما يكتبون: لقب اختياري، ولا كلمات مرور، ولا تعديل ملف شخص آخر.",
+    type: "rules"
+  },
+  {
+    id: "review", section: "النشاط", menu: "مراجعة المشاركات", audience: true,
+    notes: "ادمجي اثنين أو ثلاثة أمامهم. إذا كثرت الطلبات، ادمجي الباقي بعد الورشة واتركي الرابط لهم.",
+    type: "review"
+  },
+  {
+    id: "quiz", section: "الختام", menu: "أسئلة", audience: true,
+    notes: "لا تطرحي العشرة. اختاري ثلاثة حسب ما حدث في القاعة. الإجابة المخفية لك إذا سكتوا.",
+    type: "quiz"
+  },
+  {
+    id: "resources", section: "الختام", menu: "مصادر", audience: true,
+    notes: "اعرضي رابطين فقط: Hello World للبداية، وGitHub Skills للتمرين بعد الورشة. الباقي ينحط في المستودع.",
+    type: "resources"
+  },
+  {
+    id: "close", section: "الختام", menu: "ختام", audience: true,
+    notes: "توقفي هنا أمام الحضور. الشرائح التالية أدوات لك. ارجعي للجملة الأولى: رفعنا ملفًا وشاركنا في مشروع.",
+    type: "close"
+  }
+];
+
+const renderers = {
+  cover() {
+    return `<article class="slide cover">
+      <div>
+        <p class="kicker">ورشة تطبيقية وتفاعلية · ساعتان</p>
+        <h1>من الكود<br>إلى المشروع</h1>
+        <p class="lead">ساعتان نشتغل فيها مع بعض: نرفع ملف، ونجرب الأوامر، ونشارك في مشروع واحد.</p>
+        <p class="idea">بتطلعون اليوم وقد رفعتوا ملفًا وشاركتوا في مشروع حقيقي.</p>
+      </div>
+      <div class="meta-row">
+        <div><strong>ساعتان</strong><span>من السؤال إلى طلب الدمج</span></div>
+        <div><strong>مع بعض</strong><span>كل شخص على جهازه</span></div>
+        <div><strong>دوركم</strong><span>ترفعون الملف بأنفسكم</span></div>
+        <div><strong>مشروعان</strong><span>صفحتكم، ومستودع الورشة</span></div>
+      </div>
+    </article>`;
+  },
+  outcomes() {
+    const items = [
+      ["فهم Git ولماذا نحتاجه", "تعرفون أن المشكلة هي إدارة التغيير، لا كتابة الكود فقط."],
+      ["الفرق بين Git وGitHub", "Git يسجّل على الجهاز. GitHub يستضيف المشروع للفريق."],
+      ["إنشاء حساب ومستودع", "حساب على github.com ومستودع اسمه my-first-project."],
+      ["رفع ملف أو مشروع", "ملف index.html يظهر في صفحة المستودع بعد Commit."],
+      ["أساسيات واجهة GitHub", "تميزون Code وREADME وIssues وPull requests."],
+      ["أوامر Git الأساسية", "تنفّذون status ثم add ثم commit ثم push."],
+      ["Branch وCommit وPush وPull Request", "صفحة الدخول تُبنى على فرع feature/login-page ثم تُراجع."],
+      ["المشاركة في مشروع جماعي", "كل شخص يعمل Fork ويضيف ملفًا داخل contributions ويفتح Pull Request."]
+    ];
+    return `<article class="slide">
+      <p class="kicker">بنهاية الساعتين</p>
+      <h1>وش بتقدرون تسوون؟</h1>
+      <p class="lead">هذي النتيجة اللي نبي نوصل لها مع بعض. كل نقطة لها أثر تسوونه بأنفسكم.</p>
+      <div class="cols">${items.map((item, i) => `<div class="point"><h3>${i + 1}. ${esc(item[0])}</h3><p class="ex"><span class="ex-label">مثال</span>${esc(item[1])}</p></div>`).join("")}</div>
+    </article>`;
+  },
+  agenda() {
+    const rows = AGENDA.map((row) => `
+      <button class="agenda-row" type="button" data-action="goto" data-id="${row.id}">
+        <span class="when">${esc(row.time)}</span>
+        <strong>${esc(row.title)}</strong>
+        <span>${esc(row.what)}</span>
+      </button>`).join("");
+    return `<article class="slide">
+      <p class="kicker">ساعتان · تسعة محطات</p>
+      <h1>خريطة الورشة</h1>
+      <p class="lead">هذي محطات اليوم. التطبيق في النص، ومشاركتكم الجماعية في الأخير.</p>
+      <div class="agenda">${rows}</div>
+    </article>`;
+  },
+  thread() {
+    return `<article class="slide">
+      <p class="kicker">خيط الورشة</p>
+      <h1>مثالان لا نخلط بينهما</h1>
+      <p class="lead">الأول ملك كل مشارك. الثاني مشروع واحد يشترك فيه الجميع.</p>
+      <div class="pair">
+        <section class="panel">
+          <h2>my-first-project</h2>
+          <p>مشروعك على حسابك. صفحة واحدة تتعلمين عليها الأوامر.</p>
+          <div class="tree">my-first-project/
+  README.md
+  index.html</div>
+          <p class="ex"><span class="ex-label">مثال</span>عنوان الصفحة: مرحبًا. الفقرة: أنا أتعلم Git.</p>
+        </section>
+        <section class="panel">
+          <h2>GitHub-Workshop</h2>
+          <p>مستودع الورشة. لا أحد يكتب على الأصل مباشرة. المساهمة بنسخة Fork.</p>
+          <div class="tree">GitHub-Workshop/
+  README.md
+  contributions/
+  resources/</div>
+          <p class="ex"><span class="ex-label">مثال</span>ملف contributions/dev-01.md فيه اسم مستعار وأمر git status.</p>
+        </section>
+      </div>
+    </article>`;
+  },
+  points(s) {
+    return `<article class="slide">
+      <p class="kicker">${esc(s.kicker)}</p>
+      <h1>${esc(s.title)}</h1>
+      ${s.lead ? `<p class="lead">${esc(s.lead)}</p>` : ""}
+      ${calloutHtml(s.callout)}
+      <div class="cols">${pointsHtml(s.items)}</div>
+      ${askHtml(s.ask)}
+    </article>`;
+  },
+  repo() {
+    return `<article class="slide">
+      <p class="kicker">مشروع الورشة</p>
+      <h1>هذا المشروع اللي بنشارك فيه</h1>
+      <p class="lead">مستودع واحد. كل واحد يضيف ملفه، والأصل ما ينكتب عليه مباشرة.</p>
+      <div class="split">
+        <div>
+          <div class="tree">GitHub-Workshop/
+├── README.md
+├── contributions/
+└── resources/</div>
+          <div class="cols" style="grid-template-columns:1fr">
+            ${pointsHtml([
+              { title: "README.md", text: "اسم الورشة، نبذة، تعليمات المشاركة، وروابط المصادر.", example: "أول سطر يقرأه المشارك: اضغط Fork ثم أضف ملفك في contributions." },
+              { title: "contributions/", text: "مجلد فاضي ينتظر ملف كل شخص.", example: "بعد النشاط يصير فيه dev-01.md وdev-02.md، كل ملف بمعلومة واحدة." },
+              { title: "resources/", text: "روابط يرجعون لها بعد الورشة.", example: "ملف links.md فيه GitHub Skills وGitHub Docs ودرس Hello World." }
+            ])}
+          </div>
+        </div>
+        <div>
+          <div class="callout">مساهمتكم تمر من Fork ثم Pull Request. كذا نراجع الملف قبل ما يدخل على المشروع.</div>
+          ${exampleBox("ملفكم يطلع من حسابكم إلى مستودع الورشة. نقرأه مع بعض، ثم يندمج. الأصل ما ينمسح.", "base:    ورشة GitHub-Workshop   main\ncompare: حسابكم GitHub-Workshop main")}
+        </div>
+      </div>
+    </article>`;
+  },
+  reveal(s) {
+    const open = ui.revealed[s.id];
+    return `<article class="slide">
+      <p class="kicker">${esc(s.kicker)}</p>
+      <h1>${esc(s.title)}</h1>
+      <p class="lead">${esc(s.lead)}</p>
+      ${open ? `<div class="example"><h2>${esc(s.hiddenTitle)}</h2><p>${esc(s.hidden)}</p><p>${esc(s.nextLine)}</p></div>` : `<div class="row-actions"><button class="primary" type="button" data-action="reveal">${esc(s.button)}</button></div>`}
+    </article>`;
+  },
+  compare() {
+    const rows = [
+      ["أداة لإدارة إصدارات الكود", "منصة لاستضافة المشاريع والتعاون", "نحفظ commit على الجهاز، ثم نعرض المشروع للفريق على GitHub."],
+      ["تعمل محليًا على الجهاز", "تعمل عبر الإنترنت", "تكتبون الكود بدون نت. المشاركة تنتظر الاتصال."],
+      ["تحفظ سجل التعديلات", "تعرض المشروع وتتيح مشاركته", "git log على جهازكم، وصفحة المستودع لمن ترسلون له الرابط."],
+      ["تُستخدم بالأوامر", "توفر واجهة رسومية", "git commit -m في Terminal، وزر Commit changes في الموقع."]
+    ];
+    return `<article class="slide">
+      <p class="kicker">10–20 دقيقة · المشكلة والحل</p>
+      <h1>Git على الجهاز، وGitHub على الإنترنت</h1>
+      <p class="lead">تكتبون المشروع على جهازكم. Git يحفظ تاريخ التعديلات. GitHub يرفعه ويخلي الفريق يراه ويراجعه.</p>
+      <table>
+        <thead><tr><th>Git</th><th>GitHub</th><th>مثال</th></tr></thead>
+        <tbody>${rows.map((r) => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join("")}</tbody>
+      </table>
+      ${askHtml("هل Git وGitHub شيء واحد؟")}
+    </article>`;
+  },
+  story() {
+    const open = ui.revealed.story;
+    const names = ["project-final", "project-final-2", "project-final-last", "project-final-last-real"];
+    return `<article class="slide">
+      <p class="kicker">10–20 دقيقة · سؤال للحضور</p>
+      <h1>هل عندكم مشروع بنسخ كثيرة؟</h1>
+      <p class="lead">مين فيكم عنده مجلدات بهالأسماء؟ ارفعوا أيديكم، وبعدين نشوف كيف يرتّبها Git.</p>
+      <div class="names">${names.map((n) => `<div>${n}</div>`).join("")}</div>
+      ${open
+        ? exampleBox("نفس المشروع، لكن كل محطة تسجيل برسالة. ترجعون لأي سطر بدون ما تنسخون المجلد.", "git log --oneline\nc31f0a2 Restore the homepage title\n9ab77e1 Add contact section\n41cd902 Fix the button color\n0e8a114 Start the project")
+        : `<div class="row-actions"><button class="primary" type="button" data-action="reveal">كيف يرتّب Git نفس المشروع؟</button></div>`}
+    </article>`;
+  },
+  tour() {
+    const body = explorer("tour", TOUR, (item) => `
+      <p class="kicker">واجهة GitHub</p>
+      <h2>${esc(item.name)}</h2>
+      <p class="lead">${esc(item.what)}</p>
+      <div>${item.uses.map((use) => `<div class="point"><h3>${esc(use)}</h3></div>`).join("")}</div>
+      ${exampleBox(item.example)}
+    `);
+    return `<article class="slide">
+      <p class="kicker">20–35 دقيقة · جولة</p>
+      <h1>ماذا نرى داخل GitHub؟</h1>
+      <p class="lead">اضغطوا أي قسم عشان تشوفون مثاله. اليوم نتعرّف، وما نتقن كل زر.</p>
+      ${body}
+    </article>`;
+  },
+  steps(s) {
+    const lis = s.items.map((item, i) => `
+      <li>
+        <span class="num">${i + 1}</span>
+        <div>
+          <h3>${esc(item.title)}</h3>
+          <p>${esc(item.text)}</p>
+          ${item.example ? `<p class="ex"><span class="ex-label">مثال</span>${esc(item.example)}</p>` : ""}
+          ${item.code ? `<pre>${esc(item.code)}</pre>` : ""}
+        </div>
+      </li>`).join("");
+    return `<article class="slide">
+      <p class="kicker">${esc(s.kicker)}</p>
+      <h1>${esc(s.title)}</h1>
+      ${s.lead ? `<p class="lead">${esc(s.lead)}</p>` : ""}
+      ${calloutHtml(s.callout)}
+      <ol class="steps${s.items.length > 5 ? " dense" : ""}">${lis}</ol>
+    </article>`;
+  },
+  commit() {
+    return `<article class="slide">
+      <p class="kicker">35–50 دقيقة · مفهوم أساسي</p>
+      <h1>Commit يسجّل النسخة مع رسالتها</h1>
+      <p class="lead">تسجّلون مجموعة تغييرات في تاريخ المشروع، مع رسالة تقول ماذا تغيّر ولماذا.</p>
+      <div class="split">
+        <div>
+          <ol class="steps">
+            ${[
+              ["اضغطوا Add file", "من صفحة المستودع."],
+              ["اختاروا Create new file", "تنشئون الملف داخل GitHub مباشرة."],
+              ["اكتبوا اسم الملف", "hello.txt"],
+              ["اكتبوا محتوى بسيطًا", "Hello from GitHub"],
+              ["اضغطوا Commit changes", "الرسالة: Add hello.txt"]
+            ].map((step, i) => `<li><span class="num">${i + 1}</span><div><h3>${esc(step[0])}</h3><p class="ex"><span class="ex-label">مثال</span>${esc(step[1])}</p></div></li>`).join("")}
+          </ol>
+        </div>
+        <div>
+          ${exampleBox("حفظ الملف في المحرر يخلّيه على جهازكم فقط. Commit يضيف نقطة في السجل: «أضفنا hello.txt». بعد شهر تعرفون ماذا كانت هذه النقطة.", "hello.txt\nHello from GitHub\n\nCommit message:\nAdd hello.txt")}
+          ${askHtml("متى نستخدم Commit؟")}
+        </div>
+      </div>
+    </article>`;
+  },
+  exercise() {
+    const tasks = [
+      ["إنشاء Repository", "اسم واضح على حسابكم، مثل my-first-notes، مع README."],
+      ["إضافة introduction.txt", "من Add file ثم Create new file، داخل المستودع نفسه."],
+      ["جملة عن الاهتمام التقني", "سطر واحد، بدون جوال وبدون بريد."],
+      ["تنفيذ Commit", "رسالة مثل: Add my introduction"]
+    ];
+    return `<article class="slide">
+      <p class="turn">دوركم</p>
+      <p class="kicker">35–50 دقيقة · على حسابكم</p>
+      <h1>ارفعوا أول ملف</h1>
+      <p class="lead">كل واحد على حسابه، قبل المشروع الجماعي. ملف واحد وجملة واحدة تكفي.</p>
+      <div class="cols">
+        <div>${tasks.map((task, i) => `<div class="point"><h3>${i + 1}. ${esc(task[0])}</h3><p class="ex"><span class="ex-label">مثال</span>${esc(task[1])}</p></div>`).join("")}</div>
+        <div>
+          <p class="window-label">introduction.txt</p>
+          <pre class="doc">أهتم ببناء صفحات ويب بسيطة،
+وأبغى أنظّم مشاريعي بدل نسخ المجلد كل مرة.</pre>
+          ${exampleBox("بعد الضغط على Commit changes، ملف introduction.txt يظهر في تبويب Code، وتحته الرسالة Add my introduction.")}
+        </div>
+      </div>
+    </article>`;
+  },
+  split() {
+    const col = (title, items) => `<section class="panel"><h2>${esc(title)}</h2>${pointsHtml(items)}</section>`;
+    return `<article class="slide">
+      <p class="kicker">50–65 دقيقة · انتقال</p>
+      <h1>من واجهة الموقع إلى Terminal</h1>
+      <p class="lead">الاثنان يستخدمان Git. الموقع أسهل للبداية. الأوامر أدق حين يكبر المشروع.</p>
+      <div class="split">
+        ${col("GitHub من المتصفح", [
+          { title: "واجهة جاهزة", text: "أزرار Add file وCommit changes تكفي لأول ملف.", example: "رفعتوا introduction.txt بالسحب، بدون ما تكتبون أمرًا." },
+          { title: "يناسب الخطوة الواحدة", text: "إنشاء ملف، تعديل نص، فتح طلب دمج.", example: "تغيّرون جملة في README من الموقع وتكتبون رسالة التعديل في نفس الصفحة." }
+        ])}
+        ${col("Git من Terminal", [
+          { title: "تحكم أوضح", text: "تشوفون الحالة والفرق والسجل قبل الرفع.", example: "git diff يوريكم سطر العنوان قبل أن تسجّلوه." },
+          { title: "يناسب المشروع الكبير", text: "ملفات كثيرة وفروع وأوامر تتكرر كل يوم.", example: "عشرون ملفًا تغيّرت: git add . ثم commit واحدة، بدل رفعها ملفًا ملفًا." }
+        ])}
+      </div>
+    </article>`;
+  },
+  commands() {
+    const body = explorer("commands", COMMANDS, (item) => `
+      <p class="kicker">وظيفته</p>
+      <h2>${esc(item.name)}</h2>
+      <p class="lead">${esc(item.role)}</p>
+      <p><strong>متى.</strong> ${esc(item.when)}</p>
+      ${exampleBox(item.example, item.code)}
+    `);
+    return `<article class="slide">
+      <p class="kicker">50–65 دقيقة · مرجع الأوامر</p>
+      <h1>اثنا عشر أمرًا، كل أمر بمثال</h1>
+      <p class="lead">اضغطوا على أي أمر. يكفي اليوم أربعة: status و add و commit و push.</p>
+      ${body}
+    </article>`;
+  },
+  branch() {
+    return `<article class="slide">
+      <p class="kicker">65–80 دقيقة · التعاون</p>
+      <h1>Branch خط شغل مستقل</h1>
+      <p class="lead">المشروع فيه صفحة رئيسية جاهزة. نريد صفحة تسجيل دخول. نبنيها على فرع حتى تبقى الرئيسية سليمة.</p>
+      <div class="split">
+        <div>
+          <div class="tree">main
+  index.html      الصفحة الرئيسية
+
+feature/login-page
+  index.html      كما هي
+  login.html      صفحة جديدة</div>
+          ${exampleBox("زائرة الموقع ما زالت ترى الصفحة الرئيسية. صفحة الدخول تظهر للفريق فقط داخل الفرع إلى أن تُراجع وتُدمج.")}
+          ${askHtml("ما الفرق بين Repository وBranch؟ ولماذا لا نعدل دائمًا على Main؟")}
+        </div>
+        <div>
+          <ol class="steps">
+            ${[
+              ["أنشئوا الفرع وانتقلوا إليه", "git switch -c feature/login-page", "اسم الفرع يصف العمل: ميزة صفحة الدخول."],
+              ["عدّلوا ثم سجّلوا", "git add .\ngit commit -m \"Add login page\"", "أضفنا login.html فيها حقل اسم وحقل بريد."],
+              ["ارفعوا الفرع", "git push -u origin feature/login-page", "GitHub يصير يرى الفرع، وmain لم يتغير بعد."]
+            ].map((step, i) => `<li><span class="num">${i + 1}</span><div><h3>${esc(step[0])}</h3><p class="ex"><span class="ex-label">مثال</span>${esc(step[2])}</p><pre>${esc(step[1])}</pre></div></li>`).join("")}
+          </ol>
+        </div>
+      </div>
+    </article>`;
+  },
+  pr() {
+    const steps = [
+      ["افتحوا المستودع على GitHub", "صفحة my-first-project أو مستودع الورشة."],
+      ["انتقلوا إلى Pull requests", "تبويب بجانب Code وIssues."],
+      ["اختاروا New pull request", "يظهر اختيار الفرعين."],
+      ["حدّدوا فرع التعديلات", "feature/login-page أو فرع نسختكم."],
+      ["حدّدوا الفرع الأساسي", "غالبًا main، وهو المكان الذي نبي ندمج فيه."],
+      ["اكتبوا عنوانًا ووصفًا", "العنوان يقول ماذا تغيّر. الوصف يقول لماذا وكيف نجرّبه."],
+      ["اضغطوا Create pull request", "يبدأ النقاش على التعديل قبل الدمج."]
+    ];
+    return `<article class="slide">
+      <p class="kicker">65–80 دقيقة · طلب المراجعة</p>
+      <h1>Pull Request قبل الدمج</h1>
+      <p class="lead">بعد ما يخلص التعديل على الفرع، نفتح طلبًا حتى يراجعه الفريق ويقرر دمجه في الأساس.</p>
+      <div class="split">
+        <ol class="steps">${steps.map((step, i) => `<li><span class="num">${i + 1}</span><div><h3>${esc(step[0])}</h3><p class="ex"><span class="ex-label">مثال</span>${esc(step[1])}</p></div></li>`).join("")}</ol>
+        <div>
+          ${exampleBox("العنوان: Add login page. الوصف: صفحة فيها اسم وبريد. جرّبتها بفتح login.html. أبغى مراجعتها قبل دمجها في main.")}
+          <div class="callout">Merge هو الدمج الفعلي بعد الموافقة. الطلب يعرض الشغل، والدمج يدخله في الفرع الأساسي.</div>
+          ${askHtml("ما الفائدة من Pull Request؟")}
+        </div>
+      </div>
+    </article>`;
+  },
+  terms() {
+    const rows = [
+      ["Repository", "المشروع وملفاته وتاريخه.", "my-first-project فيه index.html وكل التسجيلات."],
+      ["Branch", "مساحة عمل مستقلة داخل المستودع.", "feature/login-page يحمل صفحة الدخول، وmain لا."],
+      ["Commit", "تسجيل مجموعة تغييرات مع رسالة.", "Add login page بعد إنشاء login.html."],
+      ["Push", "رفع التسجيلات إلى المستودع البعيد.", "git push -u origin feature/login-page فيظهر الفرع على GitHub."],
+      ["Pull Request", "طلب مراجعة ودمج، وليس الدمج نفسه.", "الزميلة تقرأ الفرق وتكتب تعليقًا قبل الموافقة."],
+      ["Merge", "إدخال تغييرات فرع في فرع آخر.", "بعد الموافقة، login.html يصير موجودًا على main."]
+    ];
+    return `<article class="slide">
+      <p class="kicker">65–80 دقيقة · ورقة واحدة</p>
+      <h1>ست كلمات تكفي لهذا اليوم</h1>
+      <table>
+        <thead><tr><th>الكلمة</th><th>المعنى</th><th>مثال</th></tr></thead>
+        <tbody>${rows.map((r) => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join("")}</tbody>
+      </table>
+    </article>`;
+  },
+  conflict() {
+    const step = ui.conflictStep;
+    let body = "";
+    if (step === 0) {
+      body = `<div class="pair">
+        <section class="panel"><h2>المطور الأول</h2><p>عدّل سطر الترحيب في index.html إلى:</p><pre>Welcome to GitHub</pre></section>
+        <section class="panel"><h2>المطور الثاني</h2><p>عدّل السطر نفسه إلى:</p><pre>Welcome to our project</pre></section>
+      </div>
+      <div class="row-actions"><button class="primary" type="button" data-action="conflict-next">إظهار التعارض</button></div>`;
+    } else if (step === 1) {
+      body = `<p class="lead">Git يتوقف لأن السطرين وقعا على نفس المكان. العلامات التالية تبيّن الطرفين ولا تحذف أحدهما وحدها.</p>
+      <pre>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+Welcome to GitHub
+=======
+Welcome to our project
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/welcome-text</pre>
+      <div class="row-actions"><button class="primary" type="button" data-action="conflict-next">إظهار حل ممكن</button><button class="ghost" type="button" data-action="conflict-reset">البداية</button></div>`;
+    } else {
+      body = `${exampleBox("نحذف علامات التعارض ونبقي جملة تجمع المعنيين، ثم نعمل commit لإتمام الدمج.", "Welcome to our GitHub project")}
+      <div class="callout">التعارض موقف طبيعي عند العمل الجماعي. المهم أن نتعلم كيف نقرر، لا أن نعتبره فشلًا في Git.</div>
+      <div class="row-actions"><button class="ghost" type="button" data-action="conflict-reset">إعادة المثال</button></div>`;
+    }
+    return `<article class="slide">
+      <p class="kicker">65–80 دقيقة · Merge Conflict</p>
+      <h1>ماذا لو عدّل شخصان نفس السطر؟</h1>
+      <p class="lead">كل شخص اشتغل على فرعه بشكل سليم. التعارض يظهر وقت الدمج، ويحتاج قرارًا بشريًا.</p>
+      ${body}
+      ${askHtml("ماذا يحدث إذا عدّل شخصان نفس السطر؟")}
+    </article>`;
+  },
+  "activity-intro"() {
+    return `<article class="slide">
+      <p class="turn">دوركم</p>
+      <p class="kicker">80–105 دقائق · التحدي</p>
+      <h1>شاركوا في أول مشروع جماعي</h1>
+      <p class="lead">كل واحد يساهم في GitHub-Workshop. الناتج ملف داخل contributions وطلب دمج على المستودع الأصلي.</p>
+      <div class="cols">
+        ${pointsHtml([
+          { title: "المشروع واحد", text: "ما ننشئ عشرين مستودعًا للنشاط. الكل يساهم في مستودع الورشة.", example: "رابط واحد على الشاشة: مستودع GitHub-Workshop." },
+          { title: "المجلد معروف", text: "المساهمة لا تُوضع في جذر المستودع.", example: "contributions/dev-01.md وليس ملفًا بجانب README." },
+          { title: "الطريق هو Fork", text: "نسخة في حسابكم، ثم طلب يرجع للأصل.", example: "حسابكم يصير فيه GitHub-Workshop، والأصل يبقى مستودع الورشة." },
+          { title: "النتيجة الجماعية", text: "بنهاية النشاط المستودع فيه مساهماتكم، وكل واحد فتح طلب دمج.", example: "ملفاتكم داخل contributions، وطلبات الدمج نراجع بعضها مع بعض." }
+        ])}
+      </div>
+      ${askHtml("هل يمكن لأكثر من مطور العمل على المشروع نفسه؟")}
+    </article>`;
+  },
+  activity() {
+    const steps = [
+      { key: "fork", name: "1. Fork", role: "نسخة في حسابكم", text: "افتحوا مستودع الورشة واضغطوا Fork. النسخة تصير في حسابكم، وتشتغلون عليها بدون ما تكتبون على الأصل.", example: "بعد الضغط، العنوان يتغير إلى حسابكم / GitHub-Workshop، وتظهر كلمة forked from.", code: "" },
+      { key: "file", name: "2. الملف", role: "داخل contributions", text: "افتحوا مجلد contributions ثم Create new file. الاسم لقب اختياري، مو لازم الاسم الحقيقي.", example: "contributions/dev-01.md", code: "" },
+      { key: "body", name: "3. المحتوى", role: "أربعة أسطر", text: "لقب، معلومة واحدة من اليوم، أمر Git واحد، وسؤال تبون تستكشفونه.", example: "المعلومة: Git يتتبع التغيير. الأمر: git status.", code: "Name: Developer 01\n\nToday I learned:\nGit helps track changes in a project.\n\nGit Command:\ngit status\n\nMy question:\nHow do I undo a commit?" },
+      { key: "commit", name: "4. Commit", role: "رسالة واضحة", text: "سجّلوا التعديل برسالة تشرح ماذا أضفتوا. خلّوا الرسالة أوضح من كلمة update.", example: "الرسالة: Add my workshop contribution", code: "" },
+      { key: "pr", name: "5. Pull Request", role: "يرجع للأصل", text: "ارجعوا إلى المستودع الأصلي، افتحوا Pull requests، ثم New pull request. اختاروا نسختكم والفرع الذي فيه الملف، واكتبوا وصفًا قصيرًا.", example: "الأساس: مستودع الورشة والفرع main. المقارنة: حسابكم والفرع الذي فيه dev-01.md. إذا ظهر زر Compare & pull request بعد الحفظ، فهو نفس الطريق.", code: "" }
+    ];
+    const body = explorer("activity-steps", steps, (item) => `
+      <p class="kicker">خطوة المشاركة</p>
+      <h2>${esc(item.name)}</h2>
+      <p class="lead">${esc(item.text)}</p>
+      ${exampleBox(item.example, item.code || "")}
+    `);
+    return `<article class="slide">
+      <p class="kicker">80–105 دقائق · اتبعوها على الشاشة</p>
+      <h1>خمس خطوات للمساهمة</h1>
+      <p class="lead">اضغطوا الخطوة اللي واقفين عندها. كل خطوة فيها مثال جاهز تنسخونه.</p>
+      ${body}
+    </article>`;
+  },
+  rules() {
+    return `<article class="slide">
+      <p class="kicker">أثناء النشاط</p>
+      <h1>اتفقنا على أربع قواعد</h1>
+      <p class="lead">الملف يمثّلكم. خلّوه واضحًا وآمنًا، وخلّصوه بطلب دمج.</p>
+      <div class="cols">
+        ${pointsHtml([
+          { title: "لقب اختياري", text: "ما نحتاج الاسم الثلاثي ولا رقم الجوال.", example: "Developer 01 يكفي." },
+          { title: "بدون أسرار", text: "لا كلمات مرور ولا مفاتيح API داخل الملف.", example: "السؤال المناسب: How do I undo a commit?" },
+          { title: "ملفكم أنتم", text: "كل واحد يضيف ملفه، وما يعدّل ملف شخص ثاني.", example: "تكتبون dev-01.md، وتتركون dev-02.md كما هو." },
+          { title: "النشاط يخلّص بطلب", text: "الملف بدون Pull Request ما يوصل لمستودع الورشة.", example: "إذا ما ظهر طلبكم في تبويب المستودع الأصلي، ارجعوا للخطوة الخامسة." }
+        ])}
+      </div>
+    </article>`;
+  },
+  review() {
+    return `<article class="slide">
+      <p class="kicker">105–115 دقيقة · على الشاشة</p>
+      <h1>نشوف مساهماتكم مع بعض</h1>
+      <p class="lead">نفتح تبويب Pull requests، نقرأ ملف واحد، ثم ندمجه إذا كان واضحًا.</p>
+      <div class="split">
+        <section class="panel">
+          <h2>Add my workshop contribution</h2>
+          <p>contributions/dev-01.md</p>
+          <div style="margin-top:10px">
+            <div class="line diff-add">+ Name: Developer 01</div>
+            <div class="line diff-add">+ Today I learned:</div>
+            <div class="line diff-add">+ Git helps track changes in a project.</div>
+            <div class="line diff-add">+ Git Command: git status</div>
+          </div>
+        </section>
+        <div>
+          ${pointsHtml([
+            { title: "Files changed", text: "يعرض ماذا أُضيف بدون ما نفتح كل المستودع.", example: "أربعة أسطر خضراء في ملف جديد، ولا ملف آخر تغيّر." },
+            { title: "تعليق المراجعة", text: "جملة قصيرة تكفي.", example: "شكرًا، الأمر والمعلومة واضحان. بندمجها." },
+            { title: "Merge pull request", text: "بعد الدمج يظهر الملف داخل contributions على الأصل.", example: "نرجع إلى Code فنلقى dev-01.md بجانب ملفات البقية." }
+          ])}
+        </div>
+      </div>
+    </article>`;
+  },
+  quiz() {
+    const item = QUESTIONS[ui.quiz];
+    const picked = ui.quizPick;
+    const dots = QUESTIONS.map((_, i) => `<i class="${i === ui.quiz ? "on" : ""}"></i>`).join("");
+    const choices = item.choices.map((choice, i) => {
+      let cls = "choice";
+      if (picked !== null) {
+        if (i === item.correct) cls += " right";
+        else if (i === picked) cls += " wrong";
+      }
+      return `<button class="${cls}" type="button" data-action="quiz-pick" data-choice="${i}">${esc(choice)}</button>`;
+    }).join("");
+    const verdict = picked === null ? "" : (picked === item.correct
+      ? `<div class="callout">إجابة صحيحة.</div>`
+      : `<div class="callout">الإجابة الصحيحة هي المحددة بالأخضر.</div>`);
+    return `<article class="slide">
+      <p class="kicker">جاوبوا مع بعض</p>
+      <h1>اختاروا الإجابة</h1>
+      <div class="quiz-top"><span dir="ltr">${ui.quiz + 1} / ${QUESTIONS.length}</span><span class="dots">${dots}</span></div>
+      <h2 style="margin-top:18px">${esc(item.q)}</h2>
+      <div>${choices}</div>
+      ${picked === null ? "" : `<div class="answer">${verdict}${exampleBox(item.example)}<p>${esc(item.a)}</p></div>`}
+      <div class="row-actions">
+        <button class="ghost" type="button" data-action="quiz-prev">السؤال السابق</button>
+        <button class="ghost" type="button" data-action="quiz-next">السؤال التالي</button>
+      </div>
+    </article>`;
+  },
+  resources() {
+    const links = [
+      ["GitHub", "https://github.com", "إنشاء الحساب والمستودعات. مثال: من هنا يبدأ تسجيل المشارك."],
+      ["تنزيل Git", "https://git-scm.com/downloads", "تثبيت الأداة على الجهاز. مثال: بعد التثبيت، git --version يطبع رقم الإصدار."],
+      ["توثيق Git", "https://git-scm.com/doc", "مرجع الأوامر. مثال: صفحة git switch إذا نسي أحد إنشاء الفرع."],
+      ["GitHub Skills", "https://skills.github.com", "تمارين قصيرة بعد الورشة. مثال: دورة مقدمة تنفَّذ داخل مستودع تدريبي."],
+      ["GitHub Docs", "https://docs.github.com", "شرح الواجهة. مثال: صفحة Fork تبيّن الفرق بين نسختك والأصل."],
+      ["Hello World", "https://docs.github.com/en/get-started/start-your-journey/hello-world", "درس رسمي من عشر دقائق. مثال: ينشئون فيه مستودعًا وفرعًا وطلب دمج."]
+    ];
+    return `<article class="slide">
+      <p class="kicker">بعد الورشة</p>
+      <h1>وين تكمّلون بعدين؟</h1>
+      <p class="lead">ابدأوا بدرس Hello World، وبعده GitHub Skills. الباقي موجود في مجلد resources.</p>
+      <div class="links">${links.map((link) => `<a href="${link[1]}" target="_blank" rel="noopener noreferrer"><strong>${esc(link[0])}</strong><span>${esc(link[2])}</span></a>`).join("")}</div>
+      ${exampleBox("ملف أعمال: مستودع عام اسمه personal-website، وفيه الصفحة وREADME يشرح التشغيل، والرابط يُوضع في السيرة.")}
+      ${askHtml("كيف يمكن استخدام GitHub في بناء ملف أعمال؟")}
+    </article>`;
+  },
+  close() {
+    return `<article class="slide cover">
+      <div>
+        <p class="kicker">115–120 دقيقة · الختام</p>
+        <h1>من ملف واحد إلى مشروع مشترك</h1>
+        <p class="lead">اليوم أخذنا طريقة ندير فيها المشروع ونشتغل عليه كفريق.</p>
+        <div class="cols" style="margin-top:22px">
+          ${pointsHtml([
+            { title: "Git يتتبع التغيير", example: "index.html صار له سجل، لا نسخة اسمها final-last." },
+            { title: "GitHub يجمع الفريق", example: "الرابط يفتح المشروع، والطلب يعرض التعديل قبل الدمج." },
+            { title: "الفرع ثم المراجعة", example: "feature/login-page ما لمس main إلا بعد Pull Request." }
+          ])}
+        </div>
+      </div>
+      <p class="idea">كل مساهمة في GitHub-Workshop خطوة في تعلم العمل الجماعي. شكرًا لمشاركتكم.</p>
+    </article>`;
+  },
+  trainer() {
+    const jumps = [
+      ["phrases", "عبارات الانتقال"],
+      ["troubles", "إذا صارت مشكلة"],
+      ["backup", "إذا تعطل التطبيق"],
+      ["checks", "قائمة المراجعة"],
+      ["readme", "قالب README"]
+    ];
+    return `<article class="slide">
+      <p class="kicker">بعد شريحة الختام</p>
+      <h1>أدواتك، وليست للعرض</h1>
+      <p class="lead">إذا ضغطتِ التالي بعد الختام وصلتي هنا. ارجعي للختام أمام الحضور، وافتحي هذه الصفحات من القائمة وأنتِ تحضّرين.</p>
+      <div class="row-actions">
+        <button class="primary" type="button" data-action="goto" data-id="close">ارجعي للختام</button>
+        ${jumps.map((j) => `<button class="ghost" type="button" data-action="goto" data-id="${j[0]}">${esc(j[1])}</button>`).join("")}
+      </div>
+    </article>`;
+  },
+  phrases() {
+    return `<article class="slide">
+      <p class="kicker">عبارات جاهزة</p>
+      <h1>جملة انتقال لكل محطة</h1>
+      ${PHRASES.map((item) => `<div class="phrase"><h3>${esc(item.when)}</h3><p>${esc(item.say)}</p></div>`).join("")}
+    </article>`;
+  },
+  troubles() {
+    const body = explorer("troubles", TROUBLES, (item) => `
+      <p class="kicker">التصرف</p>
+      <h2>${esc(item.name)}</h2>
+      <p class="lead">${esc(item.doText)}</p>
+      ${exampleBox(item.example)}
+    `);
+    return `<article class="slide">
+      <p class="kicker">أثناء الورشة</p>
+      <h1>إذا واجه أحد مشكلة</h1>
+      <p class="lead">اختاري المشكلة. التصرف قصير، والمثال يوريكِ ماذا تقولين أو تفتحين.</p>
+      ${body}
+    </article>`;
+  },
+  backup() {
+    const items = [
+      ["لا تقفين عند العطل", "دقيقتان ثم تنتقلين. القاعة ما تنتظر شريط التحميل.", "الرفع وقف عند 90 بالمئة. تقولين: نكمل على المستودع الجاهز ونرجع له بعدين."],
+      ["اعرضي الخطوة من مستودعك", "المستودع المجهّز فيه النتيجة التي كان يفترض أن تظهر.", "ما انفتح Create repository. تفتحين my-first-project الجاهز وفيه README."],
+      ["اشرحي ما كان يفترض", "جملة واحدة عن نتيجة الخطوة، حتى لو ما انضغط الزر.", "كان بيظهر ملف index.html تحت Code مع رسالة Add the first page."],
+      ["خلّيهم يتابعون الشاشة", "من ما قدر يطبّق يكمل بصريًا ولا يطلع من الورشة.", "نصف القاعة يفتح الملفات معك، والنصف الثاني يكتب الخطوات عنده."],
+      ["ارجعي للتطبيق لما يهدى العطل", "لا تعيدين الورشة من أولها. كمّلي من آخر خطوة نجحت.", "رجع الإنترنت عند الفرع. تكمّلين من feature/login-page بدون إعادة Git init."]
+    ];
+    return `<article class="slide">
+      <p class="kicker">خطة بديلة</p>
+      <h1>إذا تعطل التطبيق أمامهم</h1>
+      <ol class="steps">${items.map((item, i) => `<li><span class="num">${i + 1}</span><div><h3>${esc(item[0])}</h3><p>${esc(item[1])}</p><p class="ex"><span class="ex-label">مثال</span>${esc(item[2])}</p></div></li>`).join("")}</ol>
+    </article>`;
+  },
+  checks() {
+    const groups = ["قبل الورشة", "أثناء الورشة", "بعد الورشة"];
+    const done = CHECKS.filter((item) => ui.checks[item.id]).length;
+    const cols = groups.map((group) => `
+      <section>
+        <h2>${esc(group)}</h2>
+        ${CHECKS.filter((item) => item.group === group).map((item) => `
+          <button class="check ${ui.checks[item.id] ? "on" : ""}" type="button" data-action="check" data-id="${item.id}" aria-pressed="${ui.checks[item.id] ? "true" : "false"}">
+            <i class="box"></i><span>${esc(item.text)}</span>
+          </button>`).join("")}
+      </section>`).join("");
+    return `<article class="slide">
+      <p class="kicker">قبل وأثناء وبعد</p>
+      <h1>قائمة المراجعة</h1>
+      <p class="lead"><span id="check-count" dir="ltr">${done} / ${CHECKS.length}</span> بندًا اكتمل في هذا المتصفح.</p>
+      <div class="checks">${cols}</div>
+    </article>`;
+  },
+  readme() {
+    return `<article class="slide">
+      <p class="kicker">يُلصق في مستودع الورشة</p>
+      <h1>قالب README</h1>
+      <p class="lead">انسخي النص كما هو إلى GitHub-Workshop قبل الموعد.</p>
+      <div class="row-actions"><button class="primary" type="button" data-action="copy">نسخ القالب</button></div>
+      <pre class="doc" id="readme-block">${esc(README_TEXT)}</pre>
+    </article>`;
+  }
+};
+
+const ui = {
+  revealed: {},
+  selected: {},
+  quiz: 0,
+  quizPick: null,
+  conflictStep: 0,
+  checks: {}
+};
+let index = 0;
+
+function current() { return slides[index]; }
+
+function renderMenu() {
+  const groups = [];
+  slides.forEach((slide) => {
+    const last = groups[groups.length - 1];
+    if (!last || last.section !== slide.section) groups.push({ section: slide.section, items: [slide] });
+    else last.items.push(slide);
+  });
+  document.getElementById("menu-list").innerHTML = groups.map((group) => `
+    <p class="menu-sec">${esc(group.section)}</p>
+    ${group.items.map((slide) => `<button class="texty menu-item" type="button" data-action="goto" data-id="${slide.id}">${esc(slide.menu)}</button>`).join("")}
+  `).join("");
+}
+
+function paint(options) {
+  const slide = current();
+  const keep = options && options.keepScroll;
+  const wrap = document.getElementById("stage-wrap");
+  const stageTop = wrap.scrollTop;
+  const listTop = document.querySelector(".explorer-list") ? document.querySelector(".explorer-list").scrollTop : 0;
+  const flag = slide.audience ? "" : `<p class="trainer-flag">شريحة للمدربة — لا تعرضيها على الحضور</p>`;
+  const html = renderers[slide.type](slide);
+  document.getElementById("stage").innerHTML = flag + html;
+  document.getElementById("counter").textContent = (index + 1) + " / " + slides.length;
+  document.getElementById("section-label").textContent = slide.section;
+  document.getElementById("bar").style.width = (((index + 1) / slides.length) * 100) + "%";
+  document.getElementById("prev").disabled = index === 0;
+  document.getElementById("next").disabled = index === slides.length - 1;
+  document.title = slide.menu + " — من الكود إلى المشروع";
+  document.querySelectorAll(".menu-item").forEach((button) => {
+    button.classList.toggle("on", button.dataset.id === slide.id);
+  });
+  if (keep) {
+    wrap.scrollTop = stageTop;
+    const list = document.querySelector(".explorer-list");
+    if (list) list.scrollTop = listTop;
+  } else {
+    wrap.scrollTop = 0;
+  }
+  try { history.replaceState(null, "", "#" + slide.id); } catch (err) { /* ignore */ }
+}
+
+function go(next) {
+  const max = slides.length - 1;
+  index = Math.max(0, Math.min(max, next));
+  try { sessionStorage.setItem("workshop-slide", String(index)); } catch (err) { /* ignore */ }
+  paint();
+}
+
+function toggleMenu(force) {
+  const menu = document.getElementById("menu");
+  const open = typeof force === "boolean" ? force : menu.hasAttribute("hidden");
+  menu.hidden = !open;
+  document.getElementById("menu-btn").setAttribute("aria-expanded", open ? "true" : "false");
+}
+function toggleFull() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+
+function onClick(event) {
+  if (event.target.id === "menu") { toggleMenu(false); return; }
+  const button = event.target.closest("[data-action]");
+  if (!button) return;
+  const action = button.dataset.action;
+  if (action === "next") go(index + 1);
+  else if (action === "prev") go(index - 1);
+  else if (action === "menu") toggleMenu();
+  else if (action === "full") toggleFull();
+  else if (action === "goto") {
+    const found = slides.findIndex((slide) => slide.id === button.dataset.id);
+    if (found >= 0) { toggleMenu(false); go(found); }
+  } else if (action === "reveal") {
+    ui.revealed[current().id] = true;
+    paint({ keepScroll: true });
+  } else if (action === "pick") {
+    ui.selected[current().id] = button.dataset.key;
+    paint({ keepScroll: true });
+  } else if (action === "quiz-pick") {
+    ui.quizPick = Number(button.dataset.choice);
+    paint({ keepScroll: true });
+  } else if (action === "quiz-next") {
+    ui.quiz = Math.min(QUESTIONS.length - 1, ui.quiz + 1);
+    ui.quizPick = null;
+    paint({ keepScroll: true });
+  } else if (action === "quiz-prev") {
+    ui.quiz = Math.max(0, ui.quiz - 1);
+    ui.quizPick = null;
+    paint({ keepScroll: true });
+  } else if (action === "conflict-next") {
+    ui.conflictStep = Math.min(2, ui.conflictStep + 1);
+    paint({ keepScroll: true });
+  } else if (action === "conflict-reset") {
+    ui.conflictStep = 0;
+    paint({ keepScroll: true });
+  } else if (action === "check") {
+    const id = button.dataset.id;
+    ui.checks[id] = !ui.checks[id];
+    try { localStorage.setItem("workshop-checks", JSON.stringify(ui.checks)); } catch (err) { /* ignore */ }
+    button.classList.toggle("on", ui.checks[id]);
+    button.setAttribute("aria-pressed", ui.checks[id] ? "true" : "false");
+    const count = document.getElementById("check-count");
+    if (count) count.textContent = CHECKS.filter((item) => ui.checks[item.id]).length + " / " + CHECKS.length;
+  } else if (action === "copy") {
+    navigator.clipboard.writeText(README_TEXT).then(() => {
+      button.textContent = "تم النسخ";
+    }).catch(() => {
+      button.textContent = "انسخ النص من المربع";
+    });
+  }
+}
+
+document.body.addEventListener("click", onClick);
+document.addEventListener("keydown", (event) => {
+  if (event.altKey || event.ctrlKey || event.metaKey) return;
+  const typing = document.activeElement && document.activeElement.tagName === "INPUT";
+  if (typing) return;
+  if (event.key === "Escape") {
+    toggleMenu(false);
+    return;
+  }
+  if (event.code === "KeyM") { toggleMenu(); event.preventDefault(); return; }
+  if (event.code === "KeyF") { toggleFull(); event.preventDefault(); return; }
+  const forward = event.key === "ArrowLeft" || event.key === "ArrowDown" || event.key === "PageDown";
+  const back = event.key === "ArrowRight" || event.key === "ArrowUp" || event.key === "PageUp";
+  if (event.code === "Space") {
+    if (document.activeElement && document.activeElement.tagName === "BUTTON") return;
+    go(index + 1);
+    event.preventDefault();
+    return;
+  }
+  if (forward) { go(index + 1); event.preventDefault(); }
+  else if (back) { go(index - 1); event.preventDefault(); }
+  else if (event.key === "Home") { go(0); }
+  else if (event.key === "End") { go(slides.length - 1); }
+});
+
+document.getElementById("stage-wrap").addEventListener("touchstart", (event) => {
+  if (event.target.closest("pre, .explorer-list")) return;
+  ui.touchX = event.changedTouches[0].clientX;
+}, { passive: true });
+document.getElementById("stage-wrap").addEventListener("touchend", (event) => {
+  if (ui.touchX == null) return;
+  const dx = event.changedTouches[0].clientX - ui.touchX;
+  ui.touchX = null;
+  if (Math.abs(dx) < 70) return;
+  if (dx < 0) go(index + 1);
+  else go(index - 1);
+}, { passive: true });
+
+try {
+  ui.checks = JSON.parse(localStorage.getItem("workshop-checks") || "{}");
+} catch (err) { ui.checks = {}; }
+const hash = location.hash.replace("#", "");
+const hashIndex = slides.findIndex((slide) => slide.id === hash);
+if (hashIndex >= 0) index = hashIndex;
+else {
+  try {
+    const saved = Number(sessionStorage.getItem("workshop-slide"));
+    if (saved >= 0 && saved < slides.length) index = saved;
+  } catch (err) { /* ignore */ }
+}
+renderMenu();
+paint();
+</script>
+</body>
+</html>
